@@ -207,6 +207,22 @@ function Player(x, y, __map, __game) {
         __game.sound.playSound('blip');
     }, this);
 
+    this.getItem = wrapExposedMethod(function (itemName) {
+        var object = __game.objects[itemName];
+//        __game.getFromInventory(itemName);
+
+        if (itemName == 'computer') {
+            $('#editorPane').fadeIn();
+            __game.editor.refresh();
+        }
+        else if (itemName == 'phone') {
+            $('#phoneButton').show();
+        }
+        __game.addToInventory(itemName);
+        __game.sound.playSound('blip');
+    }, this);
+
+
     this.setPhoneCallback = wrapExposedMethod(function(func) {
         this._phoneFunc = func;
     }, this);

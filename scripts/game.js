@@ -131,6 +131,7 @@ function Game(debugMode, startLevel) {
         }
 
         // Lights, camera, action
+        /*
         if (startLevel) {
             this._currentLevel = startLevel - 1;
             this._getLevel(startLevel, debugMode);
@@ -139,7 +140,8 @@ function Game(debugMode, startLevel) {
             this._getLevel(Math.min(this._levelReached, 21));
         } else {
             this._intro();
-        }
+        }*/
+        this._getLevelByPath('levels/bonus/maze-1.jsx'); 
     };
 
     this._intro = function () {
