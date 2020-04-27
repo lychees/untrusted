@@ -2666,6 +2666,14 @@ function Player(x, y, __map, __game) {
         __display.drawAll(__map);
     });
 
+    this._moveToXY = function (x, y) {
+        __x = x;
+        __y = y;
+        //__display.drawAll(__map);
+        // play teleporter sound
+        __game.sound.playSound('blip');        
+    };    
+
     /* unexposed methods */
 
     // (used for teleporters)

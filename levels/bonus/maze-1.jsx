@@ -13,56 +13,58 @@
 /*******************
  * Maze-01.js *
  *******************
- * Press Q to destroy one wall.
+ * Press Q to generate a new maze
  */
 #BEGIN_EDITABLE#
-
-let map;
-
-function encode(x,y) {
-    return x*100 + y;
-}
+let __map;
+let __player;
 let P = [], Q = [];
 
+function gen() {
 
-function add() {
-
-    function find(x) {
-        return P[x] = x == P[x] ? x : find(P[x]);
+    function encode(x,y) {
+        return x*100 + y;
     }
-    function union(x,y) {
-        x = find(x); y = find(y);
-        P[x] = y;
-    }
-
-    let tt = 50; while (tt--) {
-        if (Q.length == 0) break;
-        game.sound.playSound('blip');
-        let p = Math.floor(Math.random() * Q.length);
-        let t = Q[p]; Q[p] = Q[Q.length-1]; Q.pop();
-        let t1 = Math.floor(t / 10000), t2 = t % 10000;
-
-        if (find(t1) != find(t2)) {
-            union(t1, t2);
-            let x1 = Math.floor(t1 / 100), y1 = t1 % 100;
-            let x2 = Math.floor(t2 / 100), y2 = t2 % 100;
-            let x = (x1+x2)/2, y = (y1+y2)/2;
-            map.placeObject(x,y,'empty');
+    
+    function add() {
+        let map = __map;
+        function find(x) {
+            return P[x] = x == P[x] ? x : find(P[x]);
+        }
+        function union(x,y) {
+            x = find(x); y = find(y);
+            P[x] = y;
+        }
+    
+        let tt = 50; while (tt--) {
+            if (Q.length == 0) break;
+            game.sound.playSound('blip');
+            let p = Math.floor(Math.random() * Q.length);
+            let t = Q[p]; Q[p] = Q[Q.length-1]; Q.pop();
+            let t1 = Math.floor(t / 10000), t2 = t % 10000;
+    
+            if (find(t1) != find(t2)) {
+                union(t1, t2);
+                let x1 = Math.floor(t1 / 100), y1 = t1 % 100;
+                let x2 = Math.floor(t2 / 100), y2 = t2 % 100;
+                let x = (x1+x2)/2, y = (y1+y2)/2;
+                map.placeObject(x,y,'empty');
+            }
         }
     }
-}
-
-function add_edge(x, y) {
-    if (!P[y]) return;
-    if (!Q.includes(x*10000+y)) {
-        Q.push(x*10000+y);
+    
+    function add_edge(x, y) {
+        if (!P[y]) return;
+        if (!Q.includes(x*10000+y)) {
+            Q.push(x*10000+y);
+        }
     }
-}
-
-function init(mapp) {
-    map = mapp;
+    
+    let map = __map; 
     let n = map.getWidth()-1;
     let m = map.getHeight()-1;
+    __player._moveToXY(n,m);
+
     for (let i=0;i<n;i++) {
         for (let j=0;j<m;j++) {
             map.placeObject(i, j, 'tree');
@@ -75,7 +77,6 @@ function init(mapp) {
             P[t] = t;
         }
     }
-
     for (let x=0;x<n;x+=2) {
         for (let y=0;y<m;y+=2) {
             let t = encode(x,y);
@@ -84,22 +85,25 @@ function init(mapp) {
         }
     }
 
-    map.placePlayer(0, 0);
-    map.placeObject(n-1, m-2, 'exit');    
+    __player._moveToXY(0,0);
+    while (Q.length != 0) {
+        add();
+    }
+   map.placeObject(n-1,m-2,'exit');
 }
-#END_EDITABLE#
 
 
 function startLevel(map) {
 #START_OF_START_LEVEL#
-    init(map);
-    var p = map.getPlayer();
-    p.getItem('phone');
-    p.getItem('computer');
-    p.getItem('blueKey');
-    p.setPhoneCallback(add);
+    __map = map; map.placePlayer(0,0); 
+    __player = map.getPlayer();
+    __player.getItem('phone');
+    __player.getItem('computer');
+    __player.getItem('blueKey');
+    gen();
+    __player.setPhoneCallback(gen);
 #END_OF_START_LEVEL#
 }
-
+#END_EDITABLE#
 function validateLevel(map) {
 }
