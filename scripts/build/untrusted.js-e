@@ -3480,6 +3480,12 @@ function Sound(source) {
             artist: "Tortue Super Sonic",
             title: "Y",
             url: "https://soundcloud.com/tss-tortue-super-sonic"
+        },
+        'Aquaria_Title': {
+            path: "music/Aquaria/02 Title.mp3",
+            artist: "Aquaria",
+            title: "Title",
+            url: ""
         }
     };
 
@@ -3515,7 +3521,7 @@ function Sound(source) {
         this.soundPlayerElt.jPlayer({
             wmode: "window",
             loop: false,
-            supplied: 'wav',
+            supplied: 'wav, m4a, oga',
             swfPath: "lib/Jplayer.swf"
         });
 
@@ -3553,12 +3559,33 @@ function Sound(source) {
         this.playTrackByName(this.defaultTracks[(num - 1) % this.defaultTracks.length]);
     };
 
-    this.playSound = function (name) {
-        $(this.soundPlayerElt).jPlayer('stop');
+    
+    this.playSE = function(name) {    
         $(this.soundPlayerElt).jPlayer("setMedia", {
-            'wav': 'sound/' + name + '.wav'
+            'oga': 'sound/' + name,
+            'wav': 'sound/' + name,
+            'm4a': 'sound/' + name            
         });
         $(this.soundPlayerElt).jPlayer('play');
+    };
+
+    this.playSound = function (name) {
+        
+         $(this.soundPlayerElt).jPlayer('stop');
+    
+        if (name == "音人/[音人]時計の鐘") {
+            $(this.soundPlayerElt).jPlayer("setMedia", {
+                'oga': 'sound/' + name + '.ogg'
+            });
+            $(this.soundPlayerElt).jPlayer('play');            
+        } else {
+            $(this.soundPlayerElt).jPlayer("setMedia", {
+                'wav': 'sound/' + name + '.wav'
+            });
+            $(this.soundPlayerElt).jPlayer('play');
+        }
+        
+        $(this.soundPlayerElt).jPlayer('play');   
     };
 
     this.toggleSound = function() {
