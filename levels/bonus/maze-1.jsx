@@ -60,6 +60,7 @@ function gen() {
     let map = __map; 
     let n = map.getWidth()-1;
     let m = map.getHeight()-1;
+
     __player._moveToXY(n,m);
 
     for (let i=0;i<n;i++) {
@@ -87,12 +88,12 @@ function gen() {
         add();
     }
     game.sound.playSE('音人/[音人]時計の鐘.ogg');
-    map.placeObject(n-1,m-2,'exit');
+    map.placeObject(n-1,m-2,'exit');  
 }
 
 function startLevel(map) {
 #START_OF_START_LEVEL#
-    __map = map; map.placePlayer(0,0); 
+    __map = map; map.placePlayer(5,5); 
     __player = map.getPlayer();
     __player.getItem('phone');
     __player.getItem('computer');

@@ -8,8 +8,8 @@ function Game(debugMode, startLevel) {
     /* unexposed properties */
 
     this._dimensions = {
-        width: 50,
-        height: 25
+        width: 60,
+        height: 60
     };
 
     this._levelFileNames = [
@@ -87,8 +87,8 @@ function Game(debugMode, startLevel) {
 
         // Initialize map display
         this.display = ROT.Display.create(this, {
-            width: this._dimensions.width,
-            height: this._dimensions.height,
+            width: 50, //this._dimensions.width,
+            height: 25, //this._dimensions.height,
             fontSize: 20
         });
         this.display.setupEventHandlers();

@@ -2,6 +2,10 @@ ROT.Display.create = function(game, opts) {
     opts.fontFamily = '"droid sans mono", Courier, "Courier New", monospace';
     var display = new ROT.Display(opts);
     display.game = game;
+    display.width = 50;
+    display.height = 25;
+    display.offset_x = 0;
+    display.offset_y = 0;
     return display;
 };
 
@@ -42,6 +46,7 @@ ROT.Display.prototype.setupEventHandlers = function() {
             display._intro = false;
         } else if (keys[e.keyCode] && game.map.getPlayer()) {
             game.map.getPlayer().move(keys[e.keyCode], true);
+            this.scroll();
         }
         e.preventDefault();
     });
@@ -68,9 +73,13 @@ ROT.Display.prototype.drawObject = function (map, x, y, object) {
     this.draw(x, y, symbol, color, bgColor);
 };
 
+
+ROT.Display.prototype.scoll = function(map) { //?
+}
+
 ROT.Display.prototype.drawAll = function(map) {
     if (!this.offset) {this.offset = 0;}
-
+  
     var game = this.game;
 
     // _initialize grid
@@ -115,8 +124,13 @@ ROT.Display.prototype.drawAll = function(map) {
     }
 
     // draw grid
-    for (var x = 0; x < game._dimensions.width; x++) {
-        for (var y = Math.max(0, this.offset - map.getHeight()); y < game._dimensions.height; y++) {
+    let x0 = this.offset_x;
+    let x1 = Math.min(x0 + this.width, game._dimensions.width); // // Math.min(game._dimensions.width, this.width);
+    let y0 = Math.max(0, this.offset - map.getHeight()) + this.offset_y;
+    let y1 = Math.min(y0 + this.height, game._dimensions.height); // Math.min(game._dimensions.height, this.height);
+
+    for (var x = x0; x < x1; x++) {
+        for (var y = y0; y < y1; y++) {
             this.drawObject(map, x, y + this.offset, grid[x][y]);
         }
     }
