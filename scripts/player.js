@@ -177,6 +177,12 @@ function Player(x, y, __map, __game) {
         else if (direction === 'funcPhone') {
             __game.usePhone();
             return;
+        } else if (direction === 'zoomIn') {
+            __game.zoomIn();
+            return;
+        } else if (direction === 'zoomOut') {
+            __game.zoomOut();
+            return;
         }
 
         if (__map._canMoveTo(new__x, new__y)) {
