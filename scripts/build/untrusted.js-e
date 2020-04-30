@@ -180,8 +180,8 @@ function Game(debugMode, startLevel) {
     /* unexposed properties */
 
     this._dimensions = {
-        width: 60,
-        height: 60
+        width: 50,
+        height: 25
     };
 
     this._levelFileNames = [
@@ -259,8 +259,8 @@ function Game(debugMode, startLevel) {
 
         // Initialize map display
         this.display = ROT.Display.create(this, {
-            width: 50, //this._dimensions.width,
-            height: 25, //this._dimensions.height,
+            width: this._dimensions.width,
+            height: this._dimensions.height,
             fontSize: 20
         });
         this.display.setupEventHandlers();
@@ -1086,10 +1086,6 @@ ROT.Display.create = function(game, opts) {
     opts.fontFamily = '"droid sans mono", Courier, "Courier New", monospace';
     var display = new ROT.Display(opts);
     display.game = game;
-    display.width = 50;
-    display.height = 25;
-    display.offset_x = 0;
-    display.offset_y = 0;
     return display;
 };
 
@@ -1158,7 +1154,7 @@ ROT.Display.prototype.drawObject = function (map, x, y, object) {
 
 ROT.Display.prototype.drawAll = function(map) {
     if (!this.offset) {this.offset = 0;}
-  
+
     var game = this.game;
 
     // _initialize grid
@@ -1203,13 +1199,8 @@ ROT.Display.prototype.drawAll = function(map) {
     }
 
     // draw grid
-    let x0 = this.offset_x;
-    let x1 = Math.min(x0 + this.width, game._dimensions.width); // // Math.min(game._dimensions.width, this.width);
-    let y0 = Math.max(0, this.offset - map.getHeight()) + this.offset_y;
-    let y1 = Math.min(y0 + this.height, game._dimensions.height); // Math.min(game._dimensions.height, this.height);
-
-    for (var x = x0; x < x1; x++) {
-        for (var y = y0; y < y1; y++) {
+    for (var x = 0; x < game._dimensions.width; x++) {
+        for (var y = Math.max(0, this.offset - map.getHeight()); y < game._dimensions.height; y++) {
             this.drawObject(map, x, y + this.offset, grid[x][y]);
         }
     }

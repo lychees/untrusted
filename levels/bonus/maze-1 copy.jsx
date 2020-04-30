@@ -97,7 +97,7 @@ function startLevel(map) {
     __player.getItem('phone');
     __player.getItem('computer');
     __player.getItem('blueKey');
-  //  gen();
+    gen();
     __player.setPhoneCallback(gen);
 #END_OF_START_LEVEL#
 }
