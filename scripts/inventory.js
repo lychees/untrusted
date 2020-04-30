@@ -117,32 +117,3 @@ Game.prototype.usePhone = function () {
 		}
 	}
 };
-
-// Zoomin Zoomout
-
-Game.prototype.zoom = function (delta) {
-	let node = this.display.getContainer();
-	let options = this.display.getOptions();
-
-	//let ZOOM_TIME = 1000;
-	//node.style.transition = `transform ${ZOOM_TIME}ms`;
-//	let scale = (options.fontSize + delta)/options.fontSize;/
-//	node.style.transform = `scale(${scale})`;
-
-	setTimeout(() => {
-		options.fontSize += delta;
-		this.display.setOptions(options);
-		//fit();
-		//setCenter(center);
-		//node.style.transition = "";
-		//node.style.transform = "";
-	}, 1);
-}
-
-Game.prototype.zoomIn = function () {
-	this.zoom(1);
-};
-
-Game.prototype.zoomOut = function () {
-	this.zoom(-1);
-};

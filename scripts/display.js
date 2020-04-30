@@ -35,9 +35,7 @@ ROT.Display.prototype.setupEventHandlers = function() {
         100: 'left', // 4
         101: 'rest', // 5
         102: 'right', // 6
-        104: 'up', // 8
-        79: 'zoomIn', // [
-        80: 'zoomOut', // ]        
+        104: 'up' // 8
     };
 
     // contentEditable is required for canvas elements to detect keyboard events
@@ -80,7 +78,6 @@ ROT.Display.prototype.scoll = function(map) { //?
 }
 
 ROT.Display.prototype.drawAll = function(map) {
-    return ;
     if (!this.offset) {this.offset = 0;}
   
     var game = this.game;
@@ -128,17 +125,9 @@ ROT.Display.prototype.drawAll = function(map) {
 
     // draw grid
     let x0 = this.offset_x;
-    //let x1 = x0+game._dimensions.widt;
- //   let x1 = Math.min(x0 + this.width, game._dimensions.width); // // Math.min(game._dimensions.width, this.width);
-    let ww = 5;
-     let x1 = Math.min(x0 + ww, game._dimensions.width); 
+    let x1 = Math.min(x0 + this.width, game._dimensions.width); // // Math.min(game._dimensions.width, this.width);
     let y0 = Math.max(0, this.offset - map.getHeight()) + this.offset_y;
-  //  let y1 = Math.min(y0 + this.height, game._dimensions.height); // Math.min(game._dimensions.height, this.height);
-   // let y1 = y0+game._dimensions.height;
-
-    let hh = 10; //100 / this.getOptions().fontSize
-    let y1 = Math.min(y0 + hh, game._dimensions.height); // Math.min(game._dimensions.height, this.height);
-   
+    let y1 = Math.min(y0 + this.height, game._dimensions.height); // Math.min(game._dimensions.height, this.height);
 
     for (var x = x0; x < x1; x++) {
         for (var y = y0; y < y1; y++) {
