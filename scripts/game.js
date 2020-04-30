@@ -127,7 +127,7 @@ function Game(debugMode, startLevel) {
             this._debugMode = true;
             this._levelReached = 999; // make all levels accessible
             __commands = Object.keys(this.reference); // display all help
-            this.sound.toggleSound(); // mute sound by default in debug mode
+            // this.sound.toggleSound(); // mute sound by default in debug mode
         }
 
         // Lights, camera, action
@@ -141,7 +141,10 @@ function Game(debugMode, startLevel) {
         } else {
             this._intro();
         }*/
-        this._getLevelByPath('levels/bonus/maze-1.jsx'); 
+        //this._getLevelByPath('levels/bonus/1-prison-break.jsx'); 
+        //this._getLevelByPath('mods/uminouta/main.jsx'); 
+        //this._intro();
+        this._getLevelByPath('levels/main.jsx'); 
     };
 
     this._intro = function () {

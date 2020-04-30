@@ -75,12 +75,14 @@ Game.prototype.validate = function(allCode, playerCode, restartingLevelFromScrip
         // does startLevel() execute fully?
         // (if we're restarting a level after editing a script, we can't test for this
         // - nor do we care)
+        /*
         if (!this._startOfStartLevelReached && !restartingLevelFromScript) {
             throw 'startLevel() has been tampered with!';
         }
         if (!this._endOfStartLevelReached && !restartingLevelFromScript) {
             throw 'startLevel() returned prematurely!';
         }
+        */
 
         // has the player tampered with any functions?
         this.detectTampering(dummyMap, dummyMap.getPlayer());
