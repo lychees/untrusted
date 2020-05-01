@@ -406,7 +406,7 @@ function Map(display, __game) {
         }
 
         if (__player && x == __player.getX() && y == __player.getY()) {
-            throw "Can't place object on top of player!";
+            // throw "Can't place object on top of player!";
         }
 
         if (typeof(__grid[x]) === 'undefined' || typeof(__grid[x][y]) === 'undefined') {
@@ -422,7 +422,8 @@ function Map(display, __game) {
             if (__grid[x][y].type === 'empty' || __grid[x][y].type === type || __allowOverwrite) {
                 __grid[x][y].type = type;
             } else {
-                throw "There is already an object at (" + x + ", " + y + ")!";
+                __grid[x][y].type = type;
+                //throw "There is already an object at (" + x + ", " + y + ")!";
             }
         }
     }, this);
