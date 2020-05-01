@@ -14,29 +14,6 @@
  * characters should be enough to erase all their tricks.
  */
 
-let __map = null;
-let __player = null;
-
-var Camera = {
-    x: 0,
-    y: 0,
-    ox: 0,
-    oy: 0
-};
-
-var MyPlayer = function(x, y) {
-    __map.placePlayer(x, y);
-    this.player = __map.getPlayer();
-    this.player.getItem('phone');
-    this.player.getItem('computer');
-    this.player.getItem('blueKey');    
-};
-
-MyPlayer.prototype.act = function() {
-    //alert("123");
-};
-
-
 #BEGIN_EDITABLE#
 var Game = {
     display: null,
@@ -54,18 +31,19 @@ var Game = {
      
     init: function() {
         this.display = new ROT.Display({
-            width: 50,
-            height: 25,
+            width: 40,
+            height: 20,
             fontSize: 20,
         });
  
-        // document.body.appendChild(this.display.getContainer());         
+        document.body.appendChild(this.display.getContainer());
+         
         this._generateMap();
          
-      var scheduler = new ROT.Scheduler.Simple();
+    /*        var scheduler = new ROT.Scheduler.Simple();
         scheduler.add(this.player, true);
         scheduler.add(this.pedro, true);
- /*
+ 
         this.engine = new ROT.Engine(scheduler);
         this.engine.start();*/
 
@@ -102,18 +80,17 @@ var Game = {
         }
     },
  
-    _generateMap: function(map) {      
-        this.width = 60;
+    _generateMap: function() {      
+        this.width = 40;
         this.height = 40;
         var digger = new ROT.Map.Cellular(this.width, this.height, {
             born: [4, 5, 6, 7, 8],
             survive: [2, 3, 4, 5],
         });
         digger.randomize(0.9);
-       //var digger = new ROT.Map.Arena(this.width, this.height); 
-       //var digger = new ROT.Map.Digger(this.width, this.height); 
-       //var digger = new ROT.Map.EllerMaze(this.width, this.height); 
-       
+       // var digger = new ROT.Map.Arena(this.width, this.height); 
+      // var digger = new ROT.Map.Digger(this.width, this.height); 
+     //  var digger = new ROT.Map.EllerMaze(this.width, this.height); 
         var freeCells = [];
          
         var digCallback = function(x, y, value) {
@@ -121,15 +98,6 @@ var Game = {
             if (value === 1) value = '#';
             var key = x+","+y;
             this.map[key] = value;
-
-            /*if (value) {
-                __map.placeObject(x,y, 'block');
-            }
-            else {
-                __map.placeObject(x,y,'empty');
-            }
-            console.log(key, value);*/
-
             if (!value) {
                 freeCells.push(key);
             }
@@ -137,24 +105,21 @@ var Game = {
         digger.create(digCallback.bind(this));
          
         //this._generateBoxes(freeCells);
-        //this._drawWholeMap();
+        this._drawWholeMap();
          
-        
-     
-       /* __player = new MyPlayer(this.player._x, this.player._y);*/
-        /*this.pedro = this._createBeing(Pedro, freeCells);                
-        */
-
+        /*
+        this.player = this._createBeing(Player, freeCells);               
+        this.pedro = this._createBeing(Pedro, freeCells);                
         let o = this.display.getOptions();
         let w = o.width;
         let h = o.height;        
-        this.player = this._createBeing(Player, freeCells); 
+         
         this.camera_x = this.player._x;
         this.camera_y = this.player._y;
         this.offset_x = Math.floor(w/2);
         this.offset_y = Math.floor(h/2);
         this._adjustCamera();
-        this._drawWholeMap();
+        this._drawWholeMap();*/
     },
      
     _createBeing: function(what, freeCells) {
@@ -185,15 +150,7 @@ var Game = {
                 let xx = x + this.camera_x - this.offset_x;
                 let yy = y + this.camera_y - this.offset_y;
                 let key = xx+','+yy;                
-                //this.display.draw(x, y, this.map[key]);   
-                                
-                if (this.map[key] === '#') {
-                    __map.placeObject(x,y, 'block');
-                }
-                else {
-                    __map.placeObject(x,y,'empty');
-                }
-                
+                this.display.draw(x, y, this.map[key]);             
             }
         }
         if (this.player) this.player._draw();
@@ -204,7 +161,7 @@ var Game = {
 var Player = function(x, y) {
     this._x = x;
     this._y = y;
-    //this._draw();
+    this._draw();
 }
      
 Player.prototype.getSpeed = function() { return 100; }
@@ -255,8 +212,7 @@ Player.prototype.handleEvent = function(e) {
 }
  
 Player.prototype._draw = function() {
-    __map.placePlayer(this._x - Game.camera_x + Game.offset_x, this._y - Game.camera_y + Game.offset_y);
-    //Game.display.draw(this._x - Game.camera_x + Game.offset_x, this._y - Game.camera_y + Game.offset_y, "@", "#ff0");
+    Game.display.draw(this._x - Game.camera_x + Game.offset_x, this._y - Game.camera_y + Game.offset_y, "@", "#ff0");
 }
      
 Player.prototype._checkBox = function() {
@@ -320,10 +276,9 @@ Pedro.prototype._draw = function() {
 function startLevel(map) {
 #START_OF_START_LEVEL#
 
-    __map = map; Game.init();
-    //map.placePlayer(7, 5);
+    map.placePlayer(7, 5);
    // Game.init();
-   /* var maze = new ROT.Map.Arena(map.getWidth(), map.getHeight());    
+    var maze = new ROT.Map.Arena(map.getWidth(), map.getHeight());    
     maze.create( function (x, y, mapValue) {
         // don't write maze over player    
         if (map.getPlayer().atLocation(x,y)) {
@@ -335,8 +290,11 @@ function startLevel(map) {
         else {
             map.placeObject(x,y,'empty');
         }
-    });*/
+    });
 
-    
+    let __player = map.getPlayer();
+    __player.getItem('phone');
+    __player.getItem('computer');
+    __player.getItem('blueKey');      
 #END_OF_START_LEVEL#
 }

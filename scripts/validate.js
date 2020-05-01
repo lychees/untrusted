@@ -1,4 +1,5 @@
 Game.prototype.verbotenWords = [
+    /* Nothing is True. Everything is permitted.
     'eval', '.call', 'call(', 'apply', 'bind', // prevents arbitrary code execution
     'prototype', // prevents messing with prototypes
     'setTimeout', 'setInterval', // requires players to use map.startTimer() instead
@@ -16,6 +17,7 @@ Game.prototype.verbotenWords = [
     'parent', 'content', // parent === content === window in most of cases
     'validate', 'onExit', 'objective', // don't let players rewrite these methods
     'this[' // prevents this['win'+'dow'], etc.
+    */
 ];
 Game.prototype.allowedTime = 2000; // for infinite loop prevention
 
