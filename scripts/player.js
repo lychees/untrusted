@@ -1,5 +1,445 @@
+MAP_WIDTH = 64;
+MAP_HEIGHT = 32;
+DISPLAY_FONTSIZE = 20;
+DISPLAY_WIDTH = 40 * DISPLAY_FONTSIZE;
+DISPLAY_HEIGHT = 25 * DISPLAY_FONTSIZE;
+
+// https://stackoverflow.com/questions/12143544/how-to-multiply-two-colors-in-javascript
+function add_shadow(c1, d) {
+    if (c1[0] !== '#') {
+        return c1;
+    }    
+    let r = c1.charCodeAt(1); if (r >= 97) r -= 97 - 10; else r -= 48;
+    let g = c1.charCodeAt(2); if (g >= 97) g -= 97 - 10; else g -= 48;
+    let b = c1.charCodeAt(3); if (b >= 97) b -= 97 - 10; else b -= 48;
+    r = Math.floor(r / 2) + 48;
+    g = Math.floor(g / 2) + 48;
+    b = Math.floor(b / 2) + 48;
+    let c2 = '#' + String.fromCharCode(r) + String.fromCharCode(g) + String.fromCharCode(b);    
+    return c2;
+}
+
+class Camera {
+
+    x = 0; y = 0;
+    ox = 0; oy = 0;
+
+    constructor(x, y, ox, oy) {        
+        this.x = x; this.y = y;                
+        this.ox = ox; this.oy = oy;
+    }
+
+    adjust() {
+    	const o = MyGame.map.display.getOptions();
+        const w = o.width, h = o.height;
+    	
+    	if (this.x - this.ox < 0) this.ox += this.x - this.ox;    	
+    	else if (MyGame.map.width - this.x + this.ox < w) this.ox -= (MyGame.map.width - this.x + this.ox) - w + 1;
+    	
+    	if (this.y - this.oy < 0) this.oy += this.y - this.oy;
+    	else if (MyGame.map.height - this.y + this.oy < h) this.oy -= (MyGame.map.height - this.y + this.oy) - h + 1;
+    }
+
+    zoom(d) {
+        let o = MyGame.map.display.getOptions();                        
+        o.fontSize += d;        
+        o.width = Math.floor(DISPLAY_WIDTH / o.fontSize);
+        o.height = Math.floor(DISPLAY_HEIGHT / o.fontSize);        
+                        
+        setTimeout(() => { // Animation?
+            MyGame.map.display.setOptions({
+                width: o.width,
+        	    height: o.height,
+        	    fontSize: o.fontSize,
+                space: 1.1,
+                fontFamily: "Helvetica",
+            });
+        }, 1);
+    }
+
+    move(dx, dy) {        
+    	this.x += dx; this.y += dy;
+        const o = MyGame.map.display.getOptions();
+        const w = o.width, h = o.height;
+        const ww = Math.floor(w/2);
+        const hh = Math.floor(h/2);
+
+        if (dx > 0 && this.x < ww || dx < 0 && this.x > MyGame.map.width - ww) {
+        	this.ox += dx; 
+        } else if (dy > 0 && this.y < hh || dy < 0 && this.y > MyGame.map.height - hh){
+        	this.oy += dy;
+        } else {
+        	this.adjust();	
+        }
+    }
+}
+
+class MyMap {
+
+    display = null;    
+    width = 0; height = 0;    
+    ground = {};
+    shadow = {};
+    boxes = {};
+    color = {};
+    ananas = null;
+
+    constructor() {
+        this.display = new ROT.Display({
+        	width: DISPLAY_WIDTH / DISPLAY_FONTSIZE,
+        	height: DISPLAY_HEIGHT / DISPLAY_FONTSIZE,
+        	fontSize: DISPLAY_FONTSIZE,
+            space: 1.1,
+            fontFamily: "Helvetica",
+        });
+
+    	this.width = MAP_WIDTH;
+    	this.height = MAP_HEIGHT;
+        var digger = new ROT.Map.Digger(this.width, this.height);
+        // var digger = new ROT.Map.Arena(this.width, this.height); 
+        
+        let freeCells = [];        
+        var digCallback = function(x, y, value) {
+            if (value) { return; }            
+            var key = x+","+y;
+            this.ground[key] = " ";
+            freeCells.push(key);
+        }
+        digger.create(digCallback.bind(this));        
+        
+        this.generateBoxes(freeCells); 
+        console.log(freeCells);
+        MyGame.player = this.createBeing(MyPlayer, freeCells);               
+        MyGame.pedro = this.createBeing(Pedro, freeCells);
+    }
+    
+    createBeing(what, freeCells) {
+        var index = Math.floor(ROT.RNG.getUniform() * freeCells.length);
+        var key = freeCells.splice(index, 1)[0];
+        var parts = key.split(",");
+        var x = parseInt(parts[0]);
+        var y = parseInt(parts[1]);      
+        return new what(x, y, 7, 10, 5, 1, 0);
+    }
+    
+    generateBoxes(freeCells) {
+        for (var i=0;i<3;i++) {
+            var index = Math.floor(ROT.RNG.getUniform() * freeCells.length);
+            var key = freeCells.splice(index, 1)[0];
+            var parts = key.split(",");
+            var x = parseInt(parts[0]);
+            var y = parseInt(parts[1]); 
+            this.boxes[key] = new Box(x, y);  
+            /*this.ground[key] = "箱";
+            this.color[key] = "#cc0";
+            if (!i) { this.ananas = key; } /* first box contains an ananas
+            */
+        }
+    }
+        
+    draw() {
+
+        console.log("draw: ");
+
+        const o = this.display.getOptions(); 
+        let w = o.width, h = o.height; 
+        
+        let fov = new ROT.FOV.PreciseShadowcasting(function(x, y) {
+            const key = x+','+y; 
+            if (!MyGame.map.ground[key]) return false; // this.ground?
+            return true;
+        });
+
+        fov.compute(MyGame.player.x, MyGame.player.y, 18, function(x, y, r, visibility) {            
+            const key = x+','+y;   
+            MyGame.map.shadow[key] = "#fff"; // this.shadow?
+        });
+
+        console.log(w);
+        console.log(h);
+  	
+        for (let x=0;x<w;++x) {
+        	for (let y=0;y<h;++y) {
+        		let xx = x + MyGame.camera.x - MyGame.camera.ox;
+        		let yy = y + MyGame.camera.y - MyGame.camera.oy;
+        		let key = xx+','+yy;   
+                let bg = this.shadow[key]; if (!bg) {
+                    this.display.draw(x, y, null);
+                    continue;
+                }
+                let c = this.ground[key];
+
+                if (!c) c = "啊";
+                if (this.shadow[key] === '#fff') this.display.draw(x, y, c, '#fff');
+                else this.display.draw(x, y, c, add_shadow('#fff'));                
+        	}
+        }
+
+        for (var key in this.boxes) {  
+            this.boxes[key].draw();
+        }
+
+        if (MyGame.player) MyGame.player.draw();
+        if (MyGame.pedro) MyGame.pedro.draw();
+
+        fov.compute(MyGame.player.x, MyGame.player.y, 25, function(x, y, r, visibility) {
+            const key = x+','+y;   
+            MyGame.map.shadow[key] = '#555';
+        }); 
+
+        MyGame.drawStatus();
+    }
+}
+
+var MyGame = {    
+    engine: null,
+    map: null,
+    camera: null,    
+    player: null,
+    pedro: null,
+    ananas: null,
+    logs: [],
+    cnt: 0,
+    
+    init: function() {
+
+        this.cnt += 1;
+        if (this.cnt !== 3) return;
+    
+
+        this.map = new MyMap();
+                
+        this.status_display = new ROT.Display({
+            width: 20,
+            height: 16,
+            fontSize: 20,
+            space: 1.1,
+            fontFamily: "Helvetica",
+        });
+        
+        this.logs_display = new ROT.Display({
+            width: 64,
+            height: 4,
+            fontSize: 20,
+            space: 1.1,
+            fontFamily: "Helvetica",
+        });
+
+        //document.body.appendChild(this.map.display.getContainer());
+        //document.body.appendChild(this.logs_display.getContainer());
+        var ctx = $('#screen')[0];
+        ctx.appendChild(this.map.display.getContainer());
+        $("#screen canvas:first").css("display", "none");
+
+       // var ctx = $('#container')[0];
+       // ctx.appendChild(this.status_display.getContainer());
+        
+                    
+        var scheduler = new ROT.Scheduler.Simple();
+        scheduler.add(this.player, true);
+        scheduler.add(this.pedro, true);
+                
+        let o = this.map.display.getOptions();
+        let w = o.width;
+        let h = o.height;
+
+        this.camera = new Camera(this.player.x, this.player.y, Math.floor(w/2), Math.floor(h/2));        
+        this.camera.adjust();
+           
+        this.engine = new ROT.Engine(scheduler);        
+        this.engine.start();
+        this.draw();
+    },
+
+    drawStatus() {
+        this.status_display.drawText(0, 0, "伊莎貝拉");
+        this.status_display.drawText(0, 1, ROT.Util.format("生命 %s/%s", this.player.hp, this.player.HP));
+        this.status_display.drawText(0, 2, ROT.Util.format("魔力 %s/%s", this.player.mp, this.player.MP));        
+        this.status_display.drawText(0, 3, ROT.Util.format("速 %s\n", this.player.speed));
+        this.status_display.drawText(0, 4, ROT.Util.format("攻 %s\n", this.player.ap));
+        this.status_display.drawText(0, 5, ROT.Util.format("防 %s\n", this.player.dp));
+    },
+
+    draw() {
+        this.map.draw();
+        this.drawStatus();
+    }
+};
+
+
+class Event {
+    x = 0;
+    y = 0;    
+    constructor(x, y) {
+        this.x = x; this.y = y;
+    }
+    touch() {        
+    }
+    open() {        
+    }
+}
+
+class Box extends Event {
+    constructor(x, y) {        
+        super(x, y);
+        this.ch = '箱'; this.color = '#cc0';
+    }
+    empty() {
+        return this.color === '#ddd';
+    }
+    open() {
+        if (!this.empty()) {
+            this.color = '#777';
+        }
+    }
+    draw() {
+        const key = this.x+','+this.y; let bg = MyGame.map.shadow[key]; if (!bg) return;
+        MyGame.map.display.draw(this.x - MyGame.camera.x + MyGame.camera.ox, this.y - MyGame.camera.y + MyGame.camera.oy, this.ch, bg === '#fff' ? this.color : add_shadow(this.color));                            
+    }
+}
+
+class Being {
+    constructor(x, y, speed, hp, mp, ap, dp) {
+        this.ch = '生'; this.color = '#fff';
+        this.x = x; this.y = y;
+        this._speed = speed; this.speed = speed;
+        this._HP = hp; this.HP = hp; this.hp = hp;
+        this._MP = mp; this.MP = mp; this.mp = mp;
+        this._ap = this.ap = ap;
+        this._dp = this.dp = dp;        
+    }
+    dead() {
+        this.ch = '死'; this.color = '#222';
+    }
+    draw() {
+        MyGame.map.display.draw(this.x - MyGame.camera.x + MyGame.camera.ox, this.y - MyGame.camera.y + MyGame.camera.oy, this.ch, this.color);
+    }
+}
+
+class MyPlayer extends Being {
+    constructor(x, y, speed, hp, mp, ap, dp) {
+        super(x, y, speed, hp, mp, ap, dp);
+        this.ch = "伊"; this.color = "#0be";
+    }
+    checkBox() {
+        var key = this.x + "," + this.y;
+        let b = MyGame.map.boxes[key]
+        if (!b) {
+            // alert("這裡沒有箱子。");
+        } else {
+            b.open();
+        }                        
+            /*else if (key == MyGame.ananas) {
+                alert("你得到了寶石，贏得了遊戲！");
+                MyGame.engine.lock();
+                window.removeEventListener("keydown", this);
+            } else {
+                if (MyGame.color[key] === "#cc0") {
+                    alert("箱子空空如也。");
+                    MyGame.color[key] = '#333';
+                }
+            }*/
+    }
+    act() {
+        MyGame.engine.lock();
+        window.addEventListener("keydown", this);
+    }
+    handleEvent(e) {        
+        var code = e.keyCode;
+        if (code == 13 || code == 32) {
+            this.checkBox();
+            return;
+        }
+        if (code == 79) {
+            MyGame.camera.zoom(1);
+            return;
+        }
+        if (code == 80) {
+            MyGame.camera.zoom(-1);
+        }
+
+
+        var keyMap = {};
+        keyMap[38] = 0;
+        keyMap[33] = 1;
+        keyMap[39] = 2;
+        keyMap[34] = 3;
+        keyMap[40] = 4;
+        keyMap[35] = 5;
+        keyMap[37] = 6;
+        keyMap[36] = 7;
+
+    
+        /* one of numpad directions? */
+        if (!(code in keyMap)) { return; }
+
+        /* is there a free space? */
+        var dir = ROT.DIRS[8][keyMap[code]];
+        var newX = this.x + dir[0];
+        var newY = this.y + dir[1];
+
+        var newKey = newX + "," + newY;
+        if (!(newKey in MyGame.map.ground)) { return; }
+
+        if (MyGame.pedro.x === newX && MyGame.pedro.y === newY) {
+            
+        } else {
+            this.x = newX; this.y = newY;
+            MyGame.camera.move(dir[0], dir[1]);
+            MyGame.map.draw();
+            
+        }   
+        window.removeEventListener("keydown", this);
+        MyGame.engine.unlock();
+    }    
+}
+
+class Pedro extends Being {
+    constructor(x, y, speed, hp, mp, ap, dp) {
+        super(x, y, speed, hp, mp, ap, dp);
+        this.ch = "衛"; this.color = "#e00";        
+    }
+    act() {
+        return;
+        const x = MyGame.player.x, y = MyGame.player.y;
+             
+        var passableCallback = function(x, y) {
+            return (x+","+y in MyGame.map.ground);
+        }
+        var astar = new ROT.Path.AStar(x, y, passableCallback, {topology:4});
+    
+        var path = [];
+        var pathCallback = function(x, y) {
+            path.push([x, y]);
+        }
+        astar.compute(this.x, this.y, pathCallback);
+    
+        path.shift();
+        //console.log(path); // ???
+        if (!path || path.length === 0) {        
+            //alert("遊戲結束，你被活捉了！");
+            //MyGame.engine.lock();        
+        } else if (path.length === 1) {
+            alert("啊！");
+            MyGame.player.hp -= 1;
+        } else {                    
+            this.x = path[0][0]; this.y = path[0][1];            
+        }
+        MyGame.draw();
+    }
+
+    draw() {
+        const key = this.x+','+this.y; let bg = MyGame.map.shadow[key]; if (bg !== '#fff') return;
+        super.draw();
+    }
+}
+
+// Original 
+
 function Player(x, y, __map, __game) {
     /* private variables */
+
+    let player = new MyPlayer(x, y);
 
     var __x = x;
     var __y = y;
@@ -133,68 +573,7 @@ function Player(x, y, __map, __game) {
         return (__x === x && __y === y);
     }, this);
 
-    this.move = wrapExposedMethod(function (direction, fromKeyboard) {
-        if (!this._canMove) { // mainly for key delay
-            return false;
-        }
-
-        if (__map._overrideKeys[direction] && fromKeyboard) {
-            try {
-                __game.validateCallback(__map._overrideKeys[direction], true);
-
-                __map.refresh();
-                this._canMove = false;
-                __map._reenableMovementForPlayer(this); // (key delay can vary by map)
-                this._afterMove(__x, __y);
-            } catch (e) {
-            }
-
-            return;
-        }
-
-        var new__x;
-        var new__y;
-        if (direction === 'up') {
-            new__x = __x;
-            new__y = __y - 1;
-        }
-        else if (direction === 'down') {
-            new__x = __x;
-            new__y = __y + 1;
-        }
-        else if (direction === 'left') {
-            new__x = __x - 1;
-            new__y = __y;
-        }
-        else if (direction === 'right') {
-            new__x = __x + 1;
-            new__y = __y;
-        }
-        else if (direction === 'rest') {
-            new__x = __x;
-            new__y = __y;
-        }
-        else if (direction === 'funcPhone') {
-            __game.usePhone();
-            return;
-        }
-
-        if (__map._canMoveTo(new__x, new__y)) {
-            __x = new__x;
-            __y = new__y;
-
-            __map.refresh();
-
-            this._canMove = false;
-
-            __lastMoveDirection = direction;
-            this._afterMove(__x, __y);
-
-            __map._reenableMovementForPlayer(this); // (key delay can vary by map)
-        } else {
-            // play bump sound
-            __game.sound.playSound('select');
-        }
+    this.move = wrapExposedMethod(function (direction, fromKeyboard) {        
     }, this);
 
     this.killedBy = wrapExposedMethod(function (killer) {

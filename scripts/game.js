@@ -101,6 +101,12 @@ function Game(debugMode, startLevel) {
         // Initialize editor, map, and objects
         this.editor = new CodeEditor("editor", 600, 500, this);
         this.map = new Map(this.display, this);
+
+        this.myGame = MyGame;
+        console.log("!!!!!!!!!!!!!");
+        console.log(this.myGame);
+
+
         this.objects = this.getListOfObjects();
 
         // Initialize validator

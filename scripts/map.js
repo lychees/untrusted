@@ -20,6 +20,7 @@ function Map(display, __game) {
     /* unexposed variables */
 
     this._properties = {};
+    this._game = __game;
     this._display = display;
     this._dummy = false; // overridden by dummyMap in validate.js
     this._status = '';
