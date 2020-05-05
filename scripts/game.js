@@ -103,9 +103,6 @@ function Game(debugMode, startLevel) {
         this.map = new Map(this.display, this);
 
         this.myGame = MyGame;
-        console.log("!!!!!!!!!!!!!");
-        console.log(this.myGame);
-
 
         this.objects = this.getListOfObjects();
 

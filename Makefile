@@ -77,8 +77,8 @@ release:
 	@cat $(js-modules) > $(js-target)
 	@./parse_target.sh $(js-target) $(mod-dir)
 	@echo "[ Done ]"
-	@echo "Compressing merged JS…\t\t\t\c"
-	@java -jar $(yui-jar) -o $(js-target-min) $(js-target)
+#	@echo "Compressing merged JS…\t\t\t\c"
+#	@java -jar $(yui-jar) -o $(js-target-min) $(js-target)
 	@echo "[ Done ]"
 
 # `make clean` removes built scripts
@@ -92,8 +92,8 @@ deploy: release
 	@rm -rf _site
 	@mkdir _site
 	@cp -R levels scripts styles images sound index.html _site
-	@./deploy.sh /untrusted _site
-	@rm -rf _site
+	#@./deploy.sh /untrusted _site
+	#@rm -rf _site
 	@echo "[ Done ]"
 
 # `make deploy-full` also deploys music and libs
@@ -102,8 +102,8 @@ deploy-full: release
 	@rm -rf _site
 	@mkdir _site
 	@cp -R levels scripts styles images sound music lib index.html _site
-	@./deploy.sh /untrusted _site
-	@rm -rf _site
+	#@./deploy.sh /untrusted _site
+	#@rm -rf _site
 	@echo "[ Done ]"
 
 # `make deploy-debug` deploys the debug version to /debug

@@ -1,8 +1,8 @@
-MAP_WIDTH = 64;
-MAP_HEIGHT = 32;
-DISPLAY_FONTSIZE = 20;
-DISPLAY_WIDTH = 40 * DISPLAY_FONTSIZE;
-DISPLAY_HEIGHT = 25 * DISPLAY_FONTSIZE;
+const MAP_WIDTH = 64;
+const MAP_HEIGHT = 32;
+const DISPLAY_FONTSIZE = 20;
+const DISPLAY_WIDTH = 40 * DISPLAY_FONTSIZE;
+const DISPLAY_HEIGHT = 25 * DISPLAY_FONTSIZE;
 
 // https://stackoverflow.com/questions/12143544/how-to-multiply-two-colors-in-javascript
 function add_shadow(c1, d) {
@@ -76,6 +76,8 @@ class Camera {
 
 class MyMap {
 
+
+
     display = null;    
     width = 0; height = 0;    
     ground = {};
@@ -92,27 +94,8 @@ class MyMap {
             space: 1.1,
             fontFamily: "Helvetica",
         });
-
-    	this.width = MAP_WIDTH;
-    	this.height = MAP_HEIGHT;
-        var digger = new ROT.Map.Digger(this.width, this.height);
-        // var digger = new ROT.Map.Arena(this.width, this.height); 
-        
-        let freeCells = [];        
-        var digCallback = function(x, y, value) {
-            if (value) { return; }            
-            var key = x+","+y;
-            this.ground[key] = " ";
-            freeCells.push(key);
-        }
-        digger.create(digCallback.bind(this));        
-        
-        this.generateBoxes(freeCells); 
-        console.log(freeCells);
-        MyGame.player = this.createBeing(MyPlayer, freeCells);               
-        MyGame.pedro = this.createBeing(Pedro, freeCells);
     }
-    
+
     createBeing(what, freeCells) {
         var index = Math.floor(ROT.RNG.getUniform() * freeCells.length);
         var key = freeCells.splice(index, 1)[0];
@@ -121,26 +104,8 @@ class MyMap {
         var y = parseInt(parts[1]);      
         return new what(x, y, 7, 10, 5, 1, 0);
     }
-    
-    generateBoxes(freeCells) {
-        for (var i=0;i<3;i++) {
-            var index = Math.floor(ROT.RNG.getUniform() * freeCells.length);
-            var key = freeCells.splice(index, 1)[0];
-            var parts = key.split(",");
-            var x = parseInt(parts[0]);
-            var y = parseInt(parts[1]); 
-            this.boxes[key] = new Box(x, y);  
-            /*this.ground[key] = "箱";
-            this.color[key] = "#cc0";
-            if (!i) { this.ananas = key; } /* first box contains an ananas
-            */
-        }
-    }
-        
+            
     draw() {
-
-        console.log("draw: ");
-
         const o = this.display.getOptions(); 
         let w = o.width, h = o.height; 
         
@@ -191,7 +156,10 @@ class MyMap {
     }
 }
 
-var MyGame = {    
+var MyGame = {   
+    
+
+    
     engine: null,
     map: null,
     camera: null,    
@@ -199,14 +167,16 @@ var MyGame = {
     pedro: null,
     ananas: null,
     logs: [],
-    cnt: 0,
-    
-    init: function() {
 
-        this.cnt += 1;
-        if (this.cnt !== 3) return;
-    
+    init() {
 
+        this._MyPlayer = MyPlayer;
+        this._Camera = Camera;
+        this._Pedro = Pedro;
+
+      //  this.cnt += 1;
+      //  if (this.cnt !== 3) return;
+    
         this.map = new MyMap();
                 
         this.status_display = new ROT.Display({
@@ -233,24 +203,8 @@ var MyGame = {
 
        // var ctx = $('#container')[0];
        // ctx.appendChild(this.status_display.getContainer());
-        
-                    
-        var scheduler = new ROT.Scheduler.Simple();
-        scheduler.add(this.player, true);
-        scheduler.add(this.pedro, true);
-                
-        let o = this.map.display.getOptions();
-        let w = o.width;
-        let h = o.height;
-
-        this.camera = new Camera(this.player.x, this.player.y, Math.floor(w/2), Math.floor(h/2));        
-        this.camera.adjust();
-           
-        this.engine = new ROT.Engine(scheduler);        
-        this.engine.start();
-        this.draw();
-    },
-
+    },      
+    
     drawStatus() {
         this.status_display.drawText(0, 0, "伊莎貝拉");
         this.status_display.drawText(0, 1, ROT.Util.format("生命 %s/%s", this.player.hp, this.player.HP));
