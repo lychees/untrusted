@@ -2637,8 +2637,6 @@ Game.prototype.getListOfObjects = function () {
         }
     };
 };
-const MAP_WIDTH = 64;
-const MAP_HEIGHT = 32;
 const DISPLAY_FONTSIZE = 20;
 const DISPLAY_WIDTH = 40 * DISPLAY_FONTSIZE;
 const DISPLAY_HEIGHT = 25 * DISPLAY_FONTSIZE;
@@ -2673,8 +2671,8 @@ class Camera {
         const w = o.width, h = o.height;
     	
     	if (this.x - this.ox < 0) this.ox += this.x - this.ox;    	
-    	else if (MyGame.map.width - this.x + this.ox < w) this.ox -= (MyGame.map.width - this.x + this.ox) - w + 1;
-    	
+        else if (MyGame.map.width - this.x + this.ox < w) this.ox -= (MyGame.map.width - this.x + this.ox) - w + 1;
+            	
     	if (this.y - this.oy < 0) this.oy += this.y - this.oy;
     	else if (MyGame.map.height - this.y + this.oy < h) this.oy -= (MyGame.map.height - this.y + this.oy) - h + 1;
     }
@@ -2714,8 +2712,6 @@ class Camera {
 }
 
 class MyMap {
-
-
 
     display = null;    
     width = 0; height = 0;    
@@ -2758,9 +2754,6 @@ class MyMap {
             const key = x+','+y;   
             MyGame.map.shadow[key] = "#fff"; // this.shadow?
         });
-
-        console.log(w);
-        console.log(h);
   	
         for (let x=0;x<w;++x) {
         	for (let y=0;y<h;++y) {
@@ -2797,8 +2790,6 @@ class MyMap {
 
 var MyGame = {   
     
-
-    
     engine: null,
     map: null,
     camera: null,    
@@ -2807,11 +2798,20 @@ var MyGame = {
     ananas: null,
     logs: [],
 
+    initCamera() {
+        const o = this.map.display.getOptions();
+        const w = o.width, h = o.height;
+        console.log(this.player.x, this.player.y);
+        this.camera = new Camera(this.player.x, this.player.y, Math.floor(w/2), Math.floor(h/2));        
+        this.camera.adjust();    
+    },
+
     init() {
 
         this._MyPlayer = MyPlayer;
         this._Camera = Camera;
         this._Pedro = Pedro;
+        this._Box = Box;
 
       //  this.cnt += 1;
       //  if (this.cnt !== 3) return;
@@ -4494,7 +4494,7 @@ Game.prototype.openHelp = function () {
     }
 };
 Game.prototype._levels = {
-    'levels/main.jsx': '#BEGIN_PROPERTIES#\n{\n    "version": "1.2",\n    "commandsIntroduced": ["ROT.Map.DividedMaze", "player.atLocation"],\n    "music": "gurh"\n}\n#END_PROPERTIES#\n/********************\n * theLongWayOut.js *\n ********************\n *\n * 伊莎貝拉的逃亡計畫很快敗露。\n */\nlet _game = null;\nlet _map = null;\nlet _player = null;\nlet _pedro = null;\n\n#BEGIN_EDITABLE#\n\nconst MAP_WIDTH = 64;\nconst MAP_HEIGHT = 32;\n\n\nfunction init() {\n    \n    _game.init(); \n    _map = _game.map;\n\n    _map.width = MAP_WIDTH;\n    _map.height = MAP_HEIGHT;\n    var digger = new ROT.Map.Digger(this.width, this.height);\n    // var digger = new ROT.Map.Arena(this.width, this.height); \n\n    let freeCells = [];        \n    var digCallback = function(x, y, value) {\n        if (value) { return; }            \n        var key = x+","+y;\n        _map.ground[key] = " ";\n        freeCells.push(key);\n    }\n    digger.create(digCallback.bind(this));\n    // this.generateBoxes(freeCells); \n    _game.player = _map.createBeing(_game._MyPlayer, freeCells);\n    _game.pedro = _map.createBeing(_game._Pedro, freeCells);\n    _player = _game.player;\n    _pedro = _game.pedro;\n\n    const o = _map.display.getOptions();\n    const w = o.width, h = o.height;\n    _game.camera = new _game._Camera(_player.x, _player.y, Math.floor(w/2), Math.floor(h/2));        \n    _game.camera.adjust();    \n    _game.draw(); \n\n   var scheduler = new ROT.Scheduler.Simple();\n   scheduler.add(_player, true);\n   scheduler.add(_pedro, true);\n   _game.engine = new ROT.Engine(scheduler);        \n   _game.engine.start();\n}\n\n\n#END_EDITABLE#\n\n\n\nfunction startLevel(map) {\n#START_OF_START_LEVEL#\n    _game = map._game.myGame;\n    map.placePlayer(0,0);\n    let p = map.getPlayer();\n    p.getItem(\'phone\');\n    p.getItem(\'computer\');\n    p.getItem(\'blueKey\');\n    init();\n#END_OF_START_LEVEL#\n}\n ', 
+    'levels/main.jsx': '#BEGIN_PROPERTIES#\n{\n    "version": "1.2",\n    "commandsIntroduced": ["ROT.Map.DividedMaze", "player.atLocation"],\n    "music": "gurh"\n}\n#END_PROPERTIES#\n#BEGIN_EDITABLE#\n/********************\n * theLongWayOut.js *\n ********************\n *\n * 伊莎貝拉的逃亡計畫很快敗露。\n */\nlet _game = null;\nlet _map = null;\nlet _player = null;\nlet _pedro = null;\n\nconst MAP_WIDTH = 64;\nconst MAP_HEIGHT = 32;\n\nfunction generateBoxes(freeCells) {\n    for (var i=0;i<100;i++) {\n        var index = Math.floor(ROT.RNG.getUniform() * freeCells.length);\n        var key = freeCells.splice(index, 1)[0];\n        var parts = key.split(",");\n        var x = parseInt(parts[0]);\n        var y = parseInt(parts[1]); \n        _map.boxes[key] = new _game._Box(x, y);  \n    }\n}\n\nfunction init() {\n    \n    _game.init(); \n    _map = _game.map;\n\n    _map.width = MAP_WIDTH;\n    _map.height = MAP_HEIGHT;\n    //var digger = new ROT.Map.Digger(_map.width, _map.height);\n    var digger = new ROT.Map.Arena(_map.width, _map.height); \n\n    let freeCells = [];        \n    var digCallback = function(x, y, value) {\n        if (value) { return; }            \n        var key = x+","+y;\n        _map.ground[key] = " ";\n        freeCells.push(key);\n    }\n    digger.create(digCallback.bind(this));\n    generateBoxes(freeCells); \n    _game.player = _map.createBeing(_game._MyPlayer, freeCells);\n    _game.pedro = _map.createBeing(_game._Pedro, freeCells);\n    _player = _game.player;\n    _pedro = _game.pedro;\n\n    _game.initCamera();\n    _game.draw(); \n    \n   var scheduler = new ROT.Scheduler.Simple();\n   scheduler.add(_player, true);\n   scheduler.add(_pedro, true);\n   _game.engine = new ROT.Engine(scheduler);        \n   _game.engine.start();\n}\n\n#END_EDITABLE#\nfunction startLevel(map) {\n#START_OF_START_LEVEL#\n    _game = map._game.myGame;\n    map.placePlayer(0,0);\n    let p = map.getPlayer();\n    p.getItem(\'phone\');\n    p.getItem(\'computer\');\n    p.getItem(\'blueKey\');\n    init();\n#END_OF_START_LEVEL#\n}\n ', 
 };
 $(document).ready(function() {
     var startLevel = getParameterByName('lvl') ? parseInt(getParameterByName('lvl')) : null;

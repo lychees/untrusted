@@ -1,5 +1,3 @@
-const MAP_WIDTH = 64;
-const MAP_HEIGHT = 32;
 const DISPLAY_FONTSIZE = 20;
 const DISPLAY_WIDTH = 40 * DISPLAY_FONTSIZE;
 const DISPLAY_HEIGHT = 25 * DISPLAY_FONTSIZE;
@@ -34,8 +32,8 @@ class Camera {
         const w = o.width, h = o.height;
     	
     	if (this.x - this.ox < 0) this.ox += this.x - this.ox;    	
-    	else if (MyGame.map.width - this.x + this.ox < w) this.ox -= (MyGame.map.width - this.x + this.ox) - w + 1;
-    	
+        else if (MyGame.map.width - this.x + this.ox < w) this.ox -= (MyGame.map.width - this.x + this.ox) - w + 1;
+            	
     	if (this.y - this.oy < 0) this.oy += this.y - this.oy;
     	else if (MyGame.map.height - this.y + this.oy < h) this.oy -= (MyGame.map.height - this.y + this.oy) - h + 1;
     }
@@ -75,8 +73,6 @@ class Camera {
 }
 
 class MyMap {
-
-
 
     display = null;    
     width = 0; height = 0;    
@@ -119,9 +115,6 @@ class MyMap {
             const key = x+','+y;   
             MyGame.map.shadow[key] = "#fff"; // this.shadow?
         });
-
-        console.log(w);
-        console.log(h);
   	
         for (let x=0;x<w;++x) {
         	for (let y=0;y<h;++y) {
@@ -158,8 +151,6 @@ class MyMap {
 
 var MyGame = {   
     
-
-    
     engine: null,
     map: null,
     camera: null,    
@@ -168,11 +159,20 @@ var MyGame = {
     ananas: null,
     logs: [],
 
+    initCamera() {
+        const o = this.map.display.getOptions();
+        const w = o.width, h = o.height;
+        console.log(this.player.x, this.player.y);
+        this.camera = new Camera(this.player.x, this.player.y, Math.floor(w/2), Math.floor(h/2));        
+        this.camera.adjust();    
+    },
+
     init() {
 
         this._MyPlayer = MyPlayer;
         this._Camera = Camera;
         this._Pedro = Pedro;
+        this._Box = Box;
 
       //  this.cnt += 1;
       //  if (this.cnt !== 3) return;
