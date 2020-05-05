@@ -115,7 +115,7 @@ class MyMap {
             const key = x+','+y;   
             MyGame.map.shadow[key] = "#fff"; // this.shadow?
         });
-  	
+      
         for (let x=0;x<w;++x) {
         	for (let y=0;y<h;++y) {
         		let xx = x + MyGame.camera.x - MyGame.camera.ox;
@@ -126,7 +126,6 @@ class MyMap {
                     continue;
                 }
                 let c = this.ground[key];
-
                 if (!c) c = "啊";
                 if (this.shadow[key] === '#fff') this.display.draw(x, y, c, '#fff');
                 else this.display.draw(x, y, c, add_shadow('#fff'));                
@@ -162,20 +161,19 @@ var MyGame = {
     initCamera() {
         const o = this.map.display.getOptions();
         const w = o.width, h = o.height;
-        console.log(this.player.x, this.player.y);
         this.camera = new Camera(this.player.x, this.player.y, Math.floor(w/2), Math.floor(h/2));        
         this.camera.adjust();    
     },
 
     init() {
 
+        if (this.inited) return;
+        this.inited = true;
+
         this._MyPlayer = MyPlayer;
         this._Camera = Camera;
         this._Pedro = Pedro;
         this._Box = Box;
-
-      //  this.cnt += 1;
-      //  if (this.cnt !== 3) return;
     
         this.map = new MyMap();
                 
@@ -298,7 +296,8 @@ class MyPlayer extends Being {
         MyGame.engine.lock();
         window.addEventListener("keydown", this);
     }
-    handleEvent(e) {        
+    handleEvent(e) {     
+
         var code = e.keyCode;
         if (code == 13 || code == 32) {
             this.checkBox();
@@ -335,7 +334,8 @@ class MyPlayer extends Being {
         var newKey = newX + "," + newY;
         if (!(newKey in MyGame.map.ground)) { return; }
 
-        if (MyGame.pedro.x === newX && MyGame.pedro.y === newY) {
+        
+        if (MyGame.pedro && MyGame.pedro.x === newX && MyGame.pedro.y === newY) {
             
         } else {
             this.x = newX; this.y = newY;
