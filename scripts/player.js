@@ -80,7 +80,7 @@ class MyMap {
     shadow = {};
     boxes = {};
     color = {};
-    ananas = null;
+    objectDefinitions = {};
 
     constructor() {
         this.display = new ROT.Display({
@@ -90,6 +90,13 @@ class MyMap {
             space: 1.1,
             fontFamily: "Helvetica",
         });
+    }
+
+    defineObject(name, properties) {
+        if (this.objectDefinitions[name]) {
+            throw "There is already a type of object named " + name + "!";
+        }
+        this.objectDefinitions[name] = properties;
     }
 
     createBeing(what, freeCells) {

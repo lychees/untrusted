@@ -13,35 +13,78 @@
 /*******************
  * 籠中之鳥 *
  *******************
- * 醒來吧 ...
  * ...
- * 醒來吧，伊莎貝拉殿下。
- * 伊莎貝拉：“你是誰？”
- * 我是水之妖精溫蒂妮，受璐娜公主的委託，前來引導你逃出地牢。
- * 明天就是交換人質的日子，伊莎貝拉決定掙脫命運的束縛。
- *
+ * 夜色漸深，伊莎貝拉從假寐中緩緩睜開雙眼，
+ * 早晨就是約定交質的日子了，
+ * 要逃跑的話，只有抓住現在。
  */
 #BEGIN_EDITABLE#
 let _game = null;
 let _map = null;
 let _player = null;
 
+/*
+map.defineObject('water', {
+    'symbol': '░',
+    'color': '#44f',
+    'onCollision': function (player) {
+        player.killedBy('drowning in deep dark water');
+    }
+});*/
+
 function initMap() {
     var grid = [
-        '#####################',
-        '######   ###    #xxx#',
-        '##   #   ###    #   #',
-        '##       #      #   #',
-        '##       #      #   #',
-        '##       #    kg#   #',
-        '##       #    ###   #',
-        '##              #   #',
-        '##                  #',
-        '####T##             #',
-        '#     #             #',
-        '#   @ #             #',
-        '#####################'
+        '牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆關關牆牆牆牆牆牆牆牆牆牆牆牆牆',
+        '牆　　　　　　　　　　　　　牆　　牆　　　　　　　　　　　　　　　　　　　　　牆',
+        '牆　　　　　　　　　　　　　牆　　牆　　　　　　　　　　　　　　　　　　　　　牆',
+        '牆　　　　　　　　　　　　　牆　　牆　　　　　　　　　　　　　　　　　　　　　牆',
+        '牆　　　　　　　　　　　　　牆關關牆　　　　　　　　　　　　　　　　　　　　　牆',
+        '牆　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　牆',
+        '牆　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　牆',                            
+        '牆　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　牆',
+        '牆　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　牆',
+        '牆牆牆牆牆牆牆牆牆牆牆牆關關牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆關關牆牆牆牆',
+        '牆　劍　　　　　　　　　　　　櫃櫃牆　　　　　　　　　　　牆　　　　　　　　　牆',
+        '牆　　　　　　　　　　　　　　櫃櫃牆　　　　　　　　　　　牆　　　　　　　　　牆',
+        '牆　　　　　　　　　　　　　　櫃櫃牆　　　　　　　　　　　牆　　　　　　　　　牆',
+        '牆桌　　床床　　　　　　　　　櫃櫃牆　　　　　　　　　　　牆　　　　　　　　　牆',
+        '牆鏡　　床床　　　　　　　　　櫃櫃牆　　　　　　　　　　　牆　　　　　　　　　牆',
+        '牆桌　伊床床　櫃　　　　　　　櫃櫃牆　　　　　　　　　　　牆　　　　　　　　　牆',
+        '牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆'
       ];
+
+    _map.defineObject('劍', {
+        'verdict_poetry': 
+            '几片晴沙映野田，数声清笛落秋烟。\n \
+             海天浩瀚孤云外，树杪依微夕照边。\n \
+             远浦人归渔火近，敢辞先赐即求田。\n \
+             只言三尺青丝鞚，肯作龙骧九万弦。\n',
+        'description':  
+            '少女慣用的愛劍，劍身如水，澄澈如鏡，是謂「水鏡」。可以將劍身周圍的元素魔法，轉化為水係魔法，為己所用。\n \
+             ATK: 7d2',
+        'symbol': '劍',
+        'color': '#229',
+        'pass': true,
+        'open': function() {
+            alert("你回收了愛劍");
+        },
+        'behavior': function (me) {
+            me.move(raftDirection);
+        }
+    });
+
+    _map.defineObject('門', {
+        'symbol': '劍',
+        'pass': false,        
+        'light': false,
+        'torch': function() {
+            alert("无法通行");
+        },        
+        'behavior': function (me) {
+            me.move(raftDirection);
+        }
+    });    
+
     let w = grid[0].length;
     let h = grid.length;
     _map.width = w;
@@ -50,14 +93,10 @@ function initMap() {
         for (let j=0;j<h;++j) {
             let c = grid[j][i];
             const key = i+','+j;
-            if (c === '@') {
+            if (c === '伊') {
                 _game.player = new _game._MyPlayer(i, j, 7, 10, 5, 1, 0);
                 _player = _game.player;
-                c = ' ';
-            } else if (c === ' ') {
-                c = ' ';
-            } else if (c === '#') {
-                c = null;
+                c = '　';
             }
             _map.ground[key] = c;
             _map.shadow[key] = '#555';
