@@ -318,7 +318,6 @@ class MyPlayer extends Being {
             MyGame.camera.zoom(-1);
         }
 
-
         var keyMap = {};
         keyMap[38] = 0;
         keyMap[33] = 1;
@@ -328,7 +327,6 @@ class MyPlayer extends Being {
         keyMap[35] = 5;
         keyMap[37] = 6;
         keyMap[36] = 7;
-
     
         /* one of numpad directions? */
         if (!(code in keyMap)) { return; }
@@ -341,15 +339,26 @@ class MyPlayer extends Being {
         var newKey = newX + "," + newY;
         if (!(newKey in MyGame.map.ground)) { return; }
 
+
+        let g = MyGame.map.ground[newKey];
+        let d = MyGame.map.objectDefinitions[g];
+        console.log(g, d);
+        
+        if (!d || d['pass'] === false) {
+//            console.log(newKey);
+  //          console.log(MyGame.map.objectDefinitions[newKey]);
+
+            return;
+        }
         
         if (MyGame.pedro && MyGame.pedro.x === newX && MyGame.pedro.y === newY) {
             
         } else {
             this.x = newX; this.y = newY;
             MyGame.camera.move(dir[0], dir[1]);
-            MyGame.map.draw();
-            
-        }   
+            MyGame.map.draw();            
+        }
+
         window.removeEventListener("keydown", this);
         MyGame.engine.unlock();
     }    

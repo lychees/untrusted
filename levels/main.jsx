@@ -83,7 +83,14 @@ function initMap() {
         'behavior': function (me) {
             me.move(raftDirection);
         }
-    });    
+    });  
+
+
+    _map.defineObject('　', {
+        'symbol': '　',
+        'pass': true,        
+        'light': true,
+    });
 
     let w = grid[0].length;
     let h = grid.length;
@@ -96,9 +103,9 @@ function initMap() {
             if (c === '伊') {
                 _game.player = new _game._MyPlayer(i, j, 7, 10, 5, 1, 0);
                 _player = _game.player;
-                c = '　';
+                c = ' ';
             }
-            _map.ground[key] = c;
+            _map.ground[key] = c;            
             _map.shadow[key] = '#555';
         }3
     }
