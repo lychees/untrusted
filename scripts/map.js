@@ -55,11 +55,11 @@ class MyMap {
         let c = this.ground[key];
         if (!c) c = this.default_tile;
         let d = this.objectDefinitions[c];        
-        if (!d['pass']) return false;
+        if (!d || !d['pass']) return false;
         if (this.layer[key]) {
             this.layer[key].forEach(function (t) {
                 let d = this.objectDefinitions[t];
-                if (!d['pass']) return false;
+                if (!d || !d['pass']) return false;
             });
         }
         return true;
@@ -69,11 +69,11 @@ class MyMap {
         let c = this.ground[key];
         if (!c) c = this.default_tile;
         let d = this.objectDefinitions[c];        
-        if (!d['light']) return false;
+        if (!d || !d['light']) return false;
         if (this.layer[key]) { 
             this.layer[key].forEach(function (t) {
                 let d = this.objectDefinitions[t];
-                if (!d['light']) return false;
+                if (!d || !d['light']) return false;
             });
         }
         return true;
@@ -101,16 +101,7 @@ class MyMap {
         
         let fov = new ROT.FOV.PreciseShadowcasting(function(x, y) {
             const key = x+','+y; 
-
-            let g = MyGame.map.ground[key];
-            let d = MyGame.map.objectDefinitions[g];
-            
-            if (!d || !d['light']) return false;
-            return d['light'];
-            /*if (!d || d['light'] === false) {
-
-            if (!MyGame.map.ground[key]) return false; // this.ground?
-            return true;*/
+            return MyGame.map.light(key);
         });
 
         fov.compute(MyGame.player.x, MyGame.player.y, 18, function(x, y, r, visibility) {            

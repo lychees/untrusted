@@ -245,8 +245,6 @@ class MyPlayer extends Being {
     }
     handleEvent(e) {     
 
-
-
         var code = e.keyCode;
         if (code == 13 || code == 32) {
             var key = this.x + "," + this.y;
@@ -286,6 +284,9 @@ class MyPlayer extends Being {
         var newY = this.y + dir[1];
 
         var newKey = newX + "," + newY;
+        
+
+
         if (!(newKey in MyGame.map.ground)) { return; }
         let g = MyGame.map.ground[newKey];
         let d = MyGame.map.objectDefinitions[g];        
@@ -299,7 +300,7 @@ class MyPlayer extends Being {
         if (!MyGame.map.pass(newKey)) {
             return;
         }
-        
+
         if (MyGame.pedro && MyGame.pedro.x === newX && MyGame.pedro.y === newY) {
             
         } else {
