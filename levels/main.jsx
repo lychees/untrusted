@@ -1,164 +1,92 @@
 #BEGIN_PROPERTIES#
 {
     "version": "1.2",
-    "commandsIntroduced":
-        ["map.getObjectTypeAt", "player.getX", "player.getY", "player.getItem",
-         "map.refresh"],
-    "mapProperties": {
-        "allowOverwrite": true
-    },
-    "music": "Aquaria_Title"
+    "commandsIntroduced": ["ROT.Map.DividedMaze", "player.atLocation"],
+    "music": "gurh"
 }
 #END_PROPERTIES#
-/*******************
- * 籠中之鳥 *
- *******************
- * ...
- * 夜色漸深，伊莎貝拉從假寐中緩緩睜開雙眼，
- * 早晨就是約定交質的日子了，
- * 要逃跑的話，只有抓住現在。
- */
 #BEGIN_EDITABLE#
+/********************
+ * 逃亡 *
+ ********************
+ *
+ * 伊莎貝拉的逃亡計畫很快敗露。
+ */
 let _game = null;
 let _map = null;
 let _player = null;
+let _pedro = null;
 
-/*
-map.defineObject('water', {
-    'symbol': '░',
-    'color': '#44f',
-    'onCollision': function (player) {
-        player.killedBy('drowning in deep dark water');
+const MAP_WIDTH = 16;
+const MAP_HEIGHT = 16;
+
+function generateBoxes(freeCells) {
+    for (var i=0;i<100;i++) {
+        var index = Math.floor(ROT.RNG.getUniform() * freeCells.length);
+        var key = freeCells.splice(index, 1)[0];
+        var parts = key.split(",");
+        var x = parseInt(parts[0]);
+        var y = parseInt(parts[1]); 
+        _map.boxes[key] = new _game._Box(x, y);  
     }
-});*/
+}
 
-function initMap() {
-    var grid = [
-        '牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆關關牆牆牆牆牆牆牆牆牆牆牆牆牆',
-        '牆　　　　　　　　　　　　　牆　　牆　　　　　　　　　　　　　　　　　　　　　牆',
-        '牆　　　　　　　　　　　　　牆　　牆　　　　　　　　　　　　　　　　　　　　　牆',
-        '牆　　　　　　　　　　　　　牆　　牆　　　　　　　　　　　　　　　　　　　　　牆',
-        '牆　　　　　　　　　　　　　牆關關牆　　　　　　　　　　　　　　　　　　　　　牆',
-        '牆　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　牆',
-        '牆　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　牆',                            
-        '牆　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　牆',
-        '牆　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　牆',
-        '牆牆牆牆牆牆牆牆牆牆牆牆門門牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆關關牆牆牆牆',
-        '牆　劍　　　　　　　　　　　　櫃櫃牆　　　　　　　　　　　牆　　　　　　　　　牆',
-        '牆　　　　　　　　　　　　　　櫃櫃牆　　　　　　　　　　　牆　　　　　　　　　牆',
-        '牆　　　　　　　　　　　　　　櫃櫃牆　　　　　　　　　　　牆　　　　　　　　　牆',
-        '牆桌　　床床　　　　　　　　　櫃櫃牆　　　　　　　　　　　牆　　　　　　　　　牆',
-        '牆鏡　　床床　　　　　　　　　櫃櫃牆　　　　　　　　　　　牆　　　　　　　　　牆',
-        '牆桌　伊床床　櫃　　　　　　　櫃櫃牆　　　　　　　　　　　牆　　　　　　　　　牆',
-        '牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆'
-      ];
-
-    _map.defineObject('劍', {
-        'verdict_poetry': 
-            '几片晴沙映野田，数声清笛落秋烟。\n \
-             海天浩瀚孤云外，树杪依微夕照边。\n \
-             远浦人归渔火近，敢辞先赐即求田。\n \
-             只言三尺青丝鞚，肯作龙骧九万弦。\n',
-        'description':  
-            '少女慣用的愛劍，劍身如水，澄澈如鏡，是謂「水鏡」。可以將劍身周圍的元素魔法，轉化為水係魔法，為己所用。\n \
-             ATK: 7d2',
-        'symbol': '劍',
-        'color': '#2fe',
-        'pass': true,
-        'light': true,        
-        'open': function(handle) {
-            alert("你回收了愛劍")
-            handle = null;
-        },
-        'behavior': function (me) {
-            me.move(raftDirection);
-        }
-    });
-    
-    _map.defineObject('床', {
-        'symbol': '床',
-        'pass': false,        
-        'light': true
-    });       
-
-    _map.defineObject('鏡', {
-        'symbol': '鏡',
-        'pass': false,        
-        'light': false,
-        'color': '#3fe',
-        'a': "鏡中映射出少女的容顏",
-        'touch': function() {
-            //alert(this['a']);     
-            alert(123);       
-            _player.addItem('臥室門鑰匙');
-            console.log(_player.inventory.list);
-        },        
-        'behavior': function (me) {
-            me.move(raftDirection);
-        }
-    });
-
-    _map.defineObject('臥室門', {
-        'symbol': '關',
-        'pass': false,
-        'light': false,
-        'touch': function() {
-            if (_player.inventory.hasItem('臥室門鑰匙')) {
-                this['symbol'] = '門';
-                this['pass'] = true;
-                this['light'] = true;
-                this['touch'] = null;          
-            } else {
-                alert('where is key?');
-            }
-        }
-    });       
-
-    let w = grid[0].length;
-    let h = grid.length;
-    _map.width = w;
-    _map.height = h;
-    for (let i=0;i<w;++i) {
-        for (let j=0;j<h;++j) {
-            let c = grid[j][i];
-            const key = i+','+j;
-            if (c === '伊') {
-                _game.player = new _game._MyPlayer(i, j, 7, 10, 5, 1, 0);
-                _player = _game.player;
-                c = '　';
-            }
-            if (c === '關') {
-                c = '　';
-                // console.log('關', key);
-            }
-            _map.ground[key] = c;            
-            _map.shadow[key] = '#555';
-        }
-    }
-
-    _map.layer['12,9'] = ['臥室門'];
-    _map.layer['13,9'] = ['臥室門'];
+function pop_random(cells) {
+    let index = Math.floor(ROT.RNG.getUniform() * cells.length);
+    let key = cells.splice(index, 1)[0];
+    return key;
 }
 
 function init() {
+    
     _game.init(); 
     _map = _game.map;
-    initMap();
+
+    _map.defineObject('上', {
+        'symbol': '上',
+        'pass': true,
+        'light': true,
+        'color': '#eee',   
+        'open': function(handle) {
+            alert("你回收了愛劍");
+        },
+    });        
+
+    _map.width = MAP_WIDTH;
+    _map.height = MAP_HEIGHT;
+    var digger = new ROT.Map.Digger(_map.width, _map.height);
+    //var digger = new ROT.Map.Arena(_map.width, _map.height); 
+
+    let freeCells = [];        
+    var digCallback = function(x, y, value) {
+        if (value) { return; }            
+        var key = x+","+y;
+        _map.ground[key] = "　";
+        freeCells.push(key);
+    }
+    digger.create(digCallback.bind(this));
+    //generateBoxes(freeCells); 
+    _game.player = _map.createBeing(_game._MyPlayer, freeCells);
+    _game.pedro = _map.createBeing(_game._Pedro, freeCells);
+    _player = _game.player;
+    _pedro = _game.pedro;
+
+    let t = pop_random(freeCells);
+    _map.ground[t] = '上';
+
     _game.initCamera();
     _game.draw(); 
-
-    console.log(_player);
     
     var scheduler = new ROT.Scheduler.Simple();
     scheduler.add(_player, true);
-    _game.engine = new ROT.Engine(scheduler);
-    console.log(_game.engine);
+    scheduler.add(_pedro, true);
+    _game.engine = new ROT.Engine(scheduler);        
     _game.engine.start();
 }
+
 #END_EDITABLE#
 function startLevel(map) {
 #START_OF_START_LEVEL#
-    map.displayChapter('第 一 章\n籠 中 之 鳥');
     _game = map._game.myGame;
     map.placePlayer(0,0);
     let p = map.getPlayer();
@@ -166,12 +94,5 @@ function startLevel(map) {
     p.getItem('computer');
     p.getItem('blueKey');
     init();
-/*    map.defineObject('door', {
-        'symbol': 'n',
-        'color': '#88f',
-        'onCollision': function (player) {
-            game.sound.playSE('魔王魂/[魔王]ドア開.ogg');
-        }
-    });*/
 #END_OF_START_LEVEL#
 }

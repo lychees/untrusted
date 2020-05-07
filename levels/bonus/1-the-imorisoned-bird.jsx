@@ -43,7 +43,7 @@ function initMap() {
         '牆　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　牆',                            
         '牆　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　牆',
         '牆　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　牆',
-        '牆牆牆牆牆牆牆牆牆牆牆牆關關牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆關關牆牆牆牆',
+        '牆牆牆牆牆牆牆牆牆牆牆牆門門牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆關關牆牆牆牆',
         '牆　劍　　　　　　　　　　　　櫃櫃牆　　　　　　　　　　　牆　　　　　　　　　牆',
         '牆　　　　　　　　　　　　　　櫃櫃牆　　　　　　　　　　　牆　　　　　　　　　牆',
         '牆　　　　　　　　　　　　　　櫃櫃牆　　　　　　　　　　　牆　　　　　　　　　牆',
@@ -66,8 +66,9 @@ function initMap() {
         'color': '#2fe',
         'pass': true,
         'light': true,        
-        'open': function() {
-            alert("你回收了愛劍");
+        'open': function(handle) {
+            alert("你回收了愛劍")
+            handle = null;
         },
         'behavior': function (me) {
             me.move(raftDirection);
@@ -80,18 +81,6 @@ function initMap() {
         'light': true
     });       
 
-    _map.defineObject('門', {
-        'symbol': '門',
-        'pass': false,        
-        'light': false,
-        'torch': function() {
-            alert("无法通行");
-        },        
-        'behavior': function (me) {
-            me.move(raftDirection);
-        }
-    });  
-
     _map.defineObject('鏡', {
         'symbol': '鏡',
         'pass': false,        
@@ -99,14 +88,31 @@ function initMap() {
         'color': '#3fe',
         'a': "鏡中映射出少女的容顏",
         'touch': function() {
-            alert(this['a']);            
+            //alert(this['a']);     
+            alert(123);       
+            _player.addItem('臥室門鑰匙');
+            console.log(_player.inventory.list);
         },        
         'behavior': function (me) {
             me.move(raftDirection);
         }
+    });
+
+    _map.defineObject('臥室門', {
+        'symbol': '關',
+        'pass': false,
+        'light': false,
+        'touch': function() {
+            if (_player.inventory.hasItem('臥室門鑰匙')) {
+                this['symbol'] = '門';
+                this['pass'] = true;
+                this['light'] = true;
+                this['touch'] = null;          
+            } else {
+                alert('where is key?');
+            }
+        }
     });       
-
-
 
     let w = grid[0].length;
     let h = grid.length;
@@ -121,10 +127,17 @@ function initMap() {
                 _player = _game.player;
                 c = '　';
             }
+            if (c === '關') {
+                c = '　';
+                // console.log('關', key);
+            }
             _map.ground[key] = c;            
             _map.shadow[key] = '#555';
         }
     }
+
+    _map.layer['12,9'] = ['臥室門'];
+    _map.layer['13,9'] = ['臥室門'];
 }
 
 function init() {
