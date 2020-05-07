@@ -48,6 +48,7 @@ function init() {
         'light': true,
         'color': '#eee',   
         'open': function(handle) {
+            _game.SE.playSound('blip');
             alert("你回收了愛劍");
         },
     });        

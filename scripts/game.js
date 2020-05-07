@@ -1,3 +1,77 @@
+
+var MyGame = {   
+    
+    engine: null,
+    map: null,
+    camera: null,    
+    player: null,
+    pedro: null,
+    ananas: null,
+    logs: [],
+
+    initCamera() {
+        const o = this.map.display.getOptions();
+        const w = o.width, h = o.height;
+        this.camera = new Camera(this.player.x, this.player.y, Math.floor(w/2), Math.floor(h/2));        
+        this.camera.adjust();    
+    },
+
+    init() {
+
+        if (this.inited) return;
+        this.SE = new Sound('local');
+        this.inited = true;
+
+        this._MyPlayer = MyPlayer;
+        this._Camera = Camera;
+        this._Pedro = Pedro;
+        this._Box = Box;
+    
+        this.map = new MyMap();
+                
+        this.status_display = new ROT.Display({
+            width: 20,
+            height: 16,
+            fontSize: 20,
+            space: 1.1,
+            fontFamily: "Helvetica",
+        });
+        
+        this.logs_display = new ROT.Display({
+            width: 64,
+            height: 4,
+            fontSize: 20,
+            space: 1.1,
+            fontFamily: "Helvetica",
+        });
+
+        //document.body.appendChild(this.map.display.getContainer());
+        //document.body.appendChild(this.logs_display.getContainer());
+        var ctx = $('#screen')[0];
+        ctx.appendChild(this.map.display.getContainer());
+        $("#screen canvas:first").css("display", "none");
+
+       // var ctx = $('#container')[0];
+       // ctx.appendChild(this.status_display.getContainer());
+    },      
+    
+    drawStatus() {
+        this.status_display.drawText(0, 0, "伊莎貝拉");
+        this.status_display.drawText(0, 1, ROT.Util.format("生命 %s/%s", this.player.hp, this.player.HP));
+        this.status_display.drawText(0, 2, ROT.Util.format("魔力 %s/%s", this.player.mp, this.player.MP));        
+        this.status_display.drawText(0, 3, ROT.Util.format("速 %s\n", this.player.speed));
+        this.status_display.drawText(0, 4, ROT.Util.format("攻 %s\n", this.player.ap));
+        this.status_display.drawText(0, 5, ROT.Util.format("防 %s\n", this.player.dp));
+    },
+
+    draw() {
+        this.map.draw();
+        this.drawStatus();
+    }
+}
+
+// -----
+
 function Game(debugMode, startLevel) {
     /* private properties */
 
