@@ -51,6 +51,23 @@ class MyMap {
         });        
     }
 
+    touch(key) {
+        let c = this.ground[key];
+        if (!c) c = this.default_tile;
+        let d = this.objectDefinitions[c];        
+        if (d && d['touch']) {
+            d['touch']();
+        }
+        if (this.layer[key]) {
+            this.layer[key].forEach(function (t) {
+                let d = MyGame.map.objectDefinitions[t];
+                if (d && d['touch']) {
+                    d['touch']();
+                }
+            });
+        }
+    }
+
     pass(key) {
         let c = this.ground[key];
         if (!c) c = this.default_tile;
@@ -58,7 +75,7 @@ class MyMap {
         if (!d || !d['pass']) return false;
         if (this.layer[key]) {
             this.layer[key].forEach(function (t) {
-                let d = this.objectDefinitions[t];
+                let d = MyGame.map.objectDefinitions[t];
                 if (!d || !d['pass']) return false;
             });
         }
@@ -72,7 +89,7 @@ class MyMap {
         if (!d || !d['light']) return false;
         if (this.layer[key]) { 
             this.layer[key].forEach(function (t) {
-                let d = this.objectDefinitions[t];
+                let d = MyGame.map.objectDefinitions[t];
                 if (!d || !d['light']) return false;
             });
         }

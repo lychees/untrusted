@@ -285,21 +285,17 @@ class MyPlayer extends Being {
 
         var newKey = newX + "," + newY;
         
-
-
         if (!(newKey in MyGame.map.ground)) { return; }
         let g = MyGame.map.ground[newKey];
         let d = MyGame.map.objectDefinitions[g];        
-       
-        if (d) {
-            if (d['touch']) {
-                d['touch']();
-            }
-        }
+
+        MyGame.map.touch(newKey);
 
         if (!MyGame.map.pass(newKey)) {
             return;
         }
+
+
 
         if (MyGame.pedro && MyGame.pedro.x === newX && MyGame.pedro.y === newY) {
             

@@ -95,6 +95,12 @@ function initMap() {
         }
     });
 
+    _map.defineObject('臥室門', {
+        'touch': function() {
+            alert('where is key?');            
+        }
+    });       
+
     let w = grid[0].length;
     let h = grid.length;
     _map.width = w;
@@ -115,6 +121,9 @@ function initMap() {
             _map.shadow[key] = '#555';
         }
     }
+
+    _map.layer['12,9'] = ['臥室門'];
+    _map.layer['13,9'] = ['臥室門'];
 }
 
 function init() {
