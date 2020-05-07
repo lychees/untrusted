@@ -7,7 +7,34 @@ var MyGame = {
     player: null,
     pedro: null,
     ananas: null,
+    _game: null,
     logs: [],
+
+    getLevelByPath(filePath) {
+//        var game = this;
+
+        let editor = this._game.editor;
+        let game = this._game;
+
+        $.get(filePath, function (lvlCode) {
+            editor.loadCode(lvlCode);
+
+            game._currentLevel = 'bonus';
+            game._currentBonusLevel = filePath.split("levels/")[1];
+            game._currentFile = null;
+
+            // load level code in editor
+            editor.loadCode(lvlCode);
+
+            // start the level and fade in
+            game._evalLevelCode(null, null, true);
+            game.display.focus();
+
+            // store the commands introduced in this level (for api reference)
+            __commands = __commands.concat(editor.getProperties().commandsIntroduced).unique();
+            localStorage.setItem(this._getLocalKey('helpCommands'), __commands.join(';'));
+        }, 'text');
+    },
 
     initCamera() {
         const o = this.map.display.getOptions();

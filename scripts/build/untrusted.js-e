@@ -179,7 +179,34 @@ var MyGame = {
     player: null,
     pedro: null,
     ananas: null,
+    _game: null,
     logs: [],
+
+    getLevelByPath(filePath) {
+//        var game = this;
+
+        let editor = this._game.editor;
+        let game = this._game;
+
+        $.get(filePath, function (lvlCode) {
+            editor.loadCode(lvlCode);
+
+            game._currentLevel = 'bonus';
+            game._currentBonusLevel = filePath.split("levels/")[1];
+            game._currentFile = null;
+
+            // load level code in editor
+            editor.loadCode(lvlCode);
+
+            // start the level and fade in
+            game._evalLevelCode(null, null, true);
+            game.display.focus();
+
+            // store the commands introduced in this level (for api reference)
+            __commands = __commands.concat(editor.getProperties().commandsIntroduced).unique();
+            localStorage.setItem(this._getLocalKey('helpCommands'), __commands.join(';'));
+        }, 'text');
+    },
 
     initCamera() {
         const o = this.map.display.getOptions();
@@ -2910,8 +2937,6 @@ class Inventory {
         this.list = [];
     }
     addItem(item) {
-        alert(123);       
-
         this.list.push(item);
     }
     drop(item) {
@@ -4656,7 +4681,7 @@ Game.prototype.openHelp = function () {
     }
 };
 Game.prototype._levels = {
-    'levels/main.jsx': '#BEGIN_PROPERTIES#\n{\n    "version": "1.2",\n    "commandsIntroduced": ["ROT.Map.DividedMaze", "player.atLocation"],\n    "music": "gurh"\n}\n#END_PROPERTIES#\n#BEGIN_EDITABLE#\n/********************\n * 逃亡 *\n ********************\n *\n * 伊莎貝拉的逃亡計畫很快敗露。\n */\nlet _game = null;\nlet _map = null;\nlet _player = null;\nlet _pedro = null;\n\nconst MAP_WIDTH = 16;\nconst MAP_HEIGHT = 16;\n\nfunction generateBoxes(freeCells) {\n    for (var i=0;i<100;i++) {\n        var index = Math.floor(ROT.RNG.getUniform() * freeCells.length);\n        var key = freeCells.splice(index, 1)[0];\n        var parts = key.split(",");\n        var x = parseInt(parts[0]);\n        var y = parseInt(parts[1]); \n        _map.boxes[key] = new _game._Box(x, y);  \n    }\n}\n\nfunction pop_random(cells) {\n    let index = Math.floor(ROT.RNG.getUniform() * cells.length);\n    let key = cells.splice(index, 1)[0];\n    return key;\n}\n\nfunction init() {\n    \n    _game.init(); \n    _map = _game.map;\n\n    _map.defineObject(\'上\', {\n        \'symbol\': \'上\',\n        \'pass\': true,\n        \'light\': true,\n        \'color\': \'#eee\',   \n        \'open\': function(handle) {\n            _game.SE.playSound(\'blip\');\n            alert("你回收了愛劍");\n        },\n    });        \n\n    _map.width = MAP_WIDTH;\n    _map.height = MAP_HEIGHT;\n    var digger = new ROT.Map.Digger(_map.width, _map.height);\n    //var digger = new ROT.Map.Arena(_map.width, _map.height); \n\n    let freeCells = [];        \n    var digCallback = function(x, y, value) {\n        if (value) { return; }            \n        var key = x+","+y;\n        _map.ground[key] = "　";\n        freeCells.push(key);\n    }\n    digger.create(digCallback.bind(this));\n    //generateBoxes(freeCells); \n    _game.player = _map.createBeing(_game._MyPlayer, freeCells);\n    _game.pedro = _map.createBeing(_game._Pedro, freeCells);\n    _player = _game.player;\n    _pedro = _game.pedro;\n\n    let t = pop_random(freeCells);\n    _map.ground[t] = \'上\';\n\n    _game.initCamera();\n    _game.draw(); \n    \n    var scheduler = new ROT.Scheduler.Simple();\n    scheduler.add(_player, true);\n    scheduler.add(_pedro, true);\n    _game.engine = new ROT.Engine(scheduler);        \n    _game.engine.start();\n}\n\n#END_EDITABLE#\nfunction startLevel(map) {\n#START_OF_START_LEVEL#\n    _game = map._game.myGame;\n    map.placePlayer(0,0);\n    let p = map.getPlayer();\n    p.getItem(\'phone\');\n    p.getItem(\'computer\');\n    p.getItem(\'blueKey\');\n    init();\n#END_OF_START_LEVEL#\n}\n ', 
+    'levels/main.jsx': '#BEGIN_PROPERTIES#\n{\n    "version": "1.2",\n    "commandsIntroduced": ["ROT.Map.DividedMaze", "player.atLocation"],\n    "music": "gurh"\n}\n#END_PROPERTIES#\n#BEGIN_EDITABLE#\n/********************\n * 逃亡 *\n ********************\n *\n * 伊莎貝拉的逃亡計畫很快敗露。\n */\nlet _game = null;\nlet _map = null;\nlet _player = null;\nlet _pedro = null;\n\nconst MAP_WIDTH = 16;\nconst MAP_HEIGHT = 16;\n\nfunction generateBoxes(freeCells) {\n    for (var i=0;i<100;i++) {\n        var index = Math.floor(ROT.RNG.getUniform() * freeCells.length);\n        var key = freeCells.splice(index, 1)[0];\n        var parts = key.split(",");\n        var x = parseInt(parts[0]);\n        var y = parseInt(parts[1]); \n        _map.boxes[key] = new _game._Box(x, y);  \n    }\n}\n\nfunction pop_random(cells) {\n    let index = Math.floor(ROT.RNG.getUniform() * cells.length);\n    let key = cells.splice(index, 1)[0];\n    return key;\n}\n\nfunction init() {\n    \n    _game.init(); \n    _map = _game.map;\n\n    _map.defineObject(\'上\', {\n        \'symbol\': \'上\',\n        \'pass\': true,\n        \'light\': true,\n        \'color\': \'#eee\',   \n        \'open\': function(handle) {\n            _game.SE.playSound(\'complete\');\n            _game.getLevelByPath(\'levels/bonus/1-the-imorisoned-bird.jsx\');\n            // alert("你回收了愛劍");\n        },\n    });        \n\n    _map.width = MAP_WIDTH;\n    _map.height = MAP_HEIGHT;\n    var digger = new ROT.Map.Digger(_map.width, _map.height);\n    //var digger = new ROT.Map.Arena(_map.width, _map.height); \n\n    let freeCells = [];        \n    var digCallback = function(x, y, value) {\n        if (value) { return; }            \n        var key = x+","+y;\n        _map.ground[key] = "　";\n        freeCells.push(key);\n    }\n    digger.create(digCallback.bind(this));\n    //generateBoxes(freeCells); \n    _game.player = _map.createBeing(_game._MyPlayer, freeCells);\n    _game.pedro = _map.createBeing(_game._Pedro, freeCells);\n    _player = _game.player;\n    _pedro = _game.pedro;\n\n    let t = pop_random(freeCells);\n    _map.ground[t] = \'上\';\n\n    _game.initCamera();\n    _game.draw(); \n    \n    var scheduler = new ROT.Scheduler.Simple();\n    scheduler.add(_player, true);\n    scheduler.add(_pedro, true);\n    _game.engine = new ROT.Engine(scheduler);        \n    _game.engine.start();\n}\n\n#END_EDITABLE#\nfunction startLevel(map) {\n#START_OF_START_LEVEL#\n    _game = map._game.myGame;\n    _game._game = map._game;\n\n    console.log(_game._game);\n\n    map.placePlayer(0,0);\n    let p = map.getPlayer();\n    p.getItem(\'phone\');\n    p.getItem(\'computer\');\n    p.getItem(\'blueKey\');\n    init();\n#END_OF_START_LEVEL#\n}\n ', 
 };
 $(document).ready(function() {
     var startLevel = getParameterByName('lvl') ? parseInt(getParameterByName('lvl')) : null;

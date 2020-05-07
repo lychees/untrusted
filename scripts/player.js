@@ -14,8 +14,6 @@ class Inventory {
         this.list = [];
     }
     addItem(item) {
-        alert(123);       
-
         this.list.push(item);
     }
     drop(item) {

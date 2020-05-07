@@ -48,8 +48,9 @@ function init() {
         'light': true,
         'color': '#eee',   
         'open': function(handle) {
-            _game.SE.playSound('blip');
-            alert("你回收了愛劍");
+            _game.SE.playSound('complete');
+            _game.getLevelByPath('levels/bonus/1-the-imorisoned-bird.jsx');
+            // alert("你回收了愛劍");
         },
     });        
 
@@ -89,6 +90,10 @@ function init() {
 function startLevel(map) {
 #START_OF_START_LEVEL#
     _game = map._game.myGame;
+    _game._game = map._game;
+
+    console.log(_game._game);
+
     map.placePlayer(0,0);
     let p = map.getPlayer();
     p.getItem('phone');
