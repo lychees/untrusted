@@ -45,7 +45,7 @@ function init() {
     var digCallback = function(x, y, value) {
         if (value) { return; }            
         var key = x+","+y;
-        _map.ground[key] = " ";
+        _map.ground[key] = "　";
         freeCells.push(key);
     }
     digger.create(digCallback.bind(this));

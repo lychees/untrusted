@@ -32,10 +32,10 @@ class Camera {
         const w = o.width, h = o.height;
     	
     	if (this.x - this.ox < 0) this.ox += this.x - this.ox;    	
-        else if (MyGame.map.width - this.x + this.ox < w) this.ox -= (MyGame.map.width - this.x + this.ox) - w + 1;
+        if (MyGame.map.width - this.x + this.ox < w) this.ox -= (MyGame.map.width - this.x + this.ox) - w + 1;
             	
-    	if (this.y - this.oy < 0) this.oy += this.y - this.oy;
-    	else if (MyGame.map.height - this.y + this.oy < h) this.oy -= (MyGame.map.height - this.y + this.oy) - h + 1;
+    	if (this.y - this.oy < 0) this.oy += this.y - this.oy;        
+    	if (MyGame.map.height - this.y + this.oy < h) this.oy -= (MyGame.map.height - this.y + this.oy) - h + 1;        
     }
 
     zoom(d) {
@@ -90,6 +90,23 @@ class MyMap {
             space: 1.1,
             fontFamily: "Helvetica",
         });
+
+        this.defineObject('　', {
+            'symbol': '　',
+            'pass': true,        
+            'light': true,
+        });    
+    
+        this.defineObject('牆', {
+            'symbol': '牆',
+            'pass': false,        
+            'light': false,
+            'torch': function() {
+            },        
+            'behavior': function (me) {
+                me.move(raftDirection);
+            }
+        });
     }
 
     defineObject(name, properties) {
@@ -114,8 +131,16 @@ class MyMap {
         
         let fov = new ROT.FOV.PreciseShadowcasting(function(x, y) {
             const key = x+','+y; 
+
+            let g = MyGame.map.ground[key];
+            let d = MyGame.map.objectDefinitions[g];
+            
+            if (!d || !d['light']) return false;
+            return d['light'];
+            /*if (!d || d['light'] === false) {
+
             if (!MyGame.map.ground[key]) return false; // this.ground?
-            return true;
+            return true;*/
         });
 
         fov.compute(MyGame.player.x, MyGame.player.y, 18, function(x, y, r, visibility) {            
@@ -132,10 +157,15 @@ class MyMap {
                     this.display.draw(x, y, null);
                     continue;
                 }
-                let c = this.ground[key];
-                if (!c) c = "啊";
-                if (this.shadow[key] === '#fff') this.display.draw(x, y, c, '#fff');
-                else this.display.draw(x, y, c, add_shadow('#fff'));                
+                let ch = this.ground[key];
+                if (!ch) ch = "牆";
+                let de = MyGame.map.objectDefinitions[ch];
+                let fc = '#fff';
+                if (de && de['color']) {
+                    fc = de['color'];
+                }
+                if (this.shadow[key] === '#fff') this.display.draw(x, y, ch, fc);
+                else this.display.draw(x, y, ch, add_shadow(fc));                
         	}
         }
 
@@ -339,15 +369,22 @@ class MyPlayer extends Being {
         var newKey = newX + "," + newY;
         if (!(newKey in MyGame.map.ground)) { return; }
 
+        console.log(newKey);
 
         let g = MyGame.map.ground[newKey];
+
+        console.log(g);
         let d = MyGame.map.objectDefinitions[g];
-        console.log(g, d);
+
+        if (d) {
+            if (d['touch']) {
+                d['touch']();
+            }
+        }
+
+
         
         if (!d || d['pass'] === false) {
-//            console.log(newKey);
-  //          console.log(MyGame.map.objectDefinitions[newKey]);
-
             return;
         }
         
