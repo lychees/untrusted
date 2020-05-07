@@ -1,3 +1,162 @@
+class MyMap {
+
+    width = 0; height = 0; layer = {};
+    tile_info = {};
+    display = null;  
+    default_tile = '牆'; default_color = '#fff';
+
+    ground = {};
+    shadow = {};
+    boxes = {};
+    color = {};
+    objectDefinitions = {};
+
+    constructor() {
+        this.display = new ROT.Display({
+        	width: DISPLAY_WIDTH / DISPLAY_FONTSIZE,
+        	height: DISPLAY_HEIGHT / DISPLAY_FONTSIZE,
+        	fontSize: DISPLAY_FONTSIZE,
+            space: 1.1,
+            fontFamily: "Helvetica",
+        });
+
+        this.defineObject('　', {
+            'symbol': '　',
+            'pass': true,        
+            'light': true,
+        });    
+    
+        this.defineObject('牆', {
+            'symbol': '牆',
+            'pass': false,        
+            'light': false,
+            'torch': function() {
+                game.sound.playSound('blip');
+            }
+        });
+
+        this.defineObject('門', {
+            'symbol': '門',
+            'pass': true,        
+            'light': true,        
+        });
+
+        this.defineObject('關', {
+            'symbol': '關',
+            'pass': false,        
+            'light': false,
+            'torch': function() {
+                alert("无法通行");
+            }
+        });        
+    }
+
+    pass(key) {
+        let c = this.ground[key];
+        if (!c) c = this.default_tile;
+        let d = this.objectDefinitions[c];        
+        if (!d['pass']) return false;
+        if (this.layer[key]) {
+            this.layer[key].forEach(function (t) {
+                let d = this.objectDefinitions[t];
+                if (!d['pass']) return false;
+            });
+        }
+        return true;
+    }
+
+    light(key) {
+        let c = this.ground[key];
+        if (!c) c = this.default_tile;
+        let d = this.objectDefinitions[c];        
+        if (!d['light']) return false;
+        if (this.layer[key]) { 
+            this.layer[key].forEach(function (t) {
+                let d = this.objectDefinitions[t];
+                if (!d['light']) return false;
+            });
+        }
+        return true;
+    }    
+
+    defineObject(name, properties) {
+        if (this.objectDefinitions[name]) {
+            throw "There is already a type of object named " + name + "!";
+        }
+        this.objectDefinitions[name] = properties;
+    }
+
+    createBeing(what, freeCells) {
+        var index = Math.floor(ROT.RNG.getUniform() * freeCells.length);
+        var key = freeCells.splice(index, 1)[0];
+        var parts = key.split(",");
+        var x = parseInt(parts[0]);
+        var y = parseInt(parts[1]);      
+        return new what(x, y, 7, 10, 5, 1, 0);
+    }
+            
+    draw() {
+        const o = this.display.getOptions(); 
+        let w = o.width, h = o.height; 
+        
+        let fov = new ROT.FOV.PreciseShadowcasting(function(x, y) {
+            const key = x+','+y; 
+
+            let g = MyGame.map.ground[key];
+            let d = MyGame.map.objectDefinitions[g];
+            
+            if (!d || !d['light']) return false;
+            return d['light'];
+            /*if (!d || d['light'] === false) {
+
+            if (!MyGame.map.ground[key]) return false; // this.ground?
+            return true;*/
+        });
+
+        fov.compute(MyGame.player.x, MyGame.player.y, 18, function(x, y, r, visibility) {            
+            const key = x+','+y;   
+            MyGame.map.shadow[key] = "#fff"; // this.shadow?
+        });
+      
+        for (let x=0;x<w;++x) {
+        	for (let y=0;y<h;++y) {
+        		let xx = x + MyGame.camera.x - MyGame.camera.ox;
+        		let yy = y + MyGame.camera.y - MyGame.camera.oy;
+        		let key = xx+','+yy;   
+                let bg = this.shadow[key]; if (!bg) {
+                    this.display.draw(x, y, null);
+                    continue;
+                }
+                let ch = this.ground[key];
+                if (!ch) ch = "牆";
+                let de = MyGame.map.objectDefinitions[ch];
+                let fc = '#fff';
+                if (de && de['color']) {
+                    fc = de['color'];
+                }
+                if (this.shadow[key] === '#fff') this.display.draw(x, y, ch, fc);
+                else this.display.draw(x, y, ch, add_shadow(fc));                
+        	}
+        }
+
+        for (var key in this.boxes) {  
+            this.boxes[key].draw();
+        }
+
+        if (MyGame.player) MyGame.player.draw();
+        if (MyGame.pedro) MyGame.pedro.draw();
+
+        fov.compute(MyGame.player.x, MyGame.player.y, 25, function(x, y, r, visibility) {
+            const key = x+','+y;   
+            MyGame.map.shadow[key] = '#555';
+        }); 
+
+        MyGame.drawStatus();
+    }
+}
+
+// --------
+
 function Map(display, __game) {
     /* private variables */
 

@@ -66,8 +66,9 @@ function initMap() {
         'color': '#2fe',
         'pass': true,
         'light': true,        
-        'open': function() {
-            alert("你回收了愛劍");
+        'open': function(handle) {
+            alert("你回收了愛劍")
+            handle = null;
         },
         'behavior': function (me) {
             me.move(raftDirection);
@@ -79,18 +80,6 @@ function initMap() {
         'pass': false,        
         'light': true
     });       
-
-    _map.defineObject('門', {
-        'symbol': '門',
-        'pass': false,        
-        'light': false,
-        'torch': function() {
-            alert("无法通行");
-        },        
-        'behavior': function (me) {
-            me.move(raftDirection);
-        }
-    });  
 
     _map.defineObject('鏡', {
         'symbol': '鏡',
@@ -104,9 +93,7 @@ function initMap() {
         'behavior': function (me) {
             me.move(raftDirection);
         }
-    });       
-
-
+    });
 
     let w = grid[0].length;
     let h = grid.length;
@@ -120,6 +107,9 @@ function initMap() {
                 _game.player = new _game._MyPlayer(i, j, 7, 10, 5, 1, 0);
                 _player = _game.player;
                 c = '　';
+            }
+            if (c === '關') {
+                console.log('關', key);
             }
             _map.ground[key] = c;            
             _map.shadow[key] = '#555';

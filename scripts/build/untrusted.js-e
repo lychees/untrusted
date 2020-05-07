@@ -1704,6 +1704,165 @@ Game.prototype.usePhone = function () {
 		}
 	}
 };
+class MyMap {
+
+    width = 0; height = 0; layer = {};
+    tile_info = {};
+    display = null;  
+    default_tile = '牆'; default_color = '#fff';
+
+    ground = {};
+    shadow = {};
+    boxes = {};
+    color = {};
+    objectDefinitions = {};
+
+    constructor() {
+        this.display = new ROT.Display({
+        	width: DISPLAY_WIDTH / DISPLAY_FONTSIZE,
+        	height: DISPLAY_HEIGHT / DISPLAY_FONTSIZE,
+        	fontSize: DISPLAY_FONTSIZE,
+            space: 1.1,
+            fontFamily: "Helvetica",
+        });
+
+        this.defineObject('　', {
+            'symbol': '　',
+            'pass': true,        
+            'light': true,
+        });    
+    
+        this.defineObject('牆', {
+            'symbol': '牆',
+            'pass': false,        
+            'light': false,
+            'torch': function() {
+                game.sound.playSound('blip');
+            }
+        });
+
+        this.defineObject('門', {
+            'symbol': '門',
+            'pass': true,        
+            'light': true,        
+        });
+
+        this.defineObject('關', {
+            'symbol': '關',
+            'pass': false,        
+            'light': false,
+            'torch': function() {
+                alert("无法通行");
+            }
+        });        
+    }
+
+    pass(key) {
+        let c = this.ground[key];
+        if (!c) c = this.default_tile;
+        let d = this.objectDefinitions[c];        
+        if (!d['pass']) return false;
+        if (this.layer[key]) {
+            this.layer[key].forEach(function (t) {
+                let d = this.objectDefinitions[t];
+                if (!d['pass']) return false;
+            });
+        }
+        return true;
+    }
+
+    light(key) {
+        let c = this.ground[key];
+        if (!c) c = this.default_tile;
+        let d = this.objectDefinitions[c];        
+        if (!d['light']) return false;
+        if (this.layer[key]) { 
+            this.layer[key].forEach(function (t) {
+                let d = this.objectDefinitions[t];
+                if (!d['light']) return false;
+            });
+        }
+        return true;
+    }    
+
+    defineObject(name, properties) {
+        if (this.objectDefinitions[name]) {
+            throw "There is already a type of object named " + name + "!";
+        }
+        this.objectDefinitions[name] = properties;
+    }
+
+    createBeing(what, freeCells) {
+        var index = Math.floor(ROT.RNG.getUniform() * freeCells.length);
+        var key = freeCells.splice(index, 1)[0];
+        var parts = key.split(",");
+        var x = parseInt(parts[0]);
+        var y = parseInt(parts[1]);      
+        return new what(x, y, 7, 10, 5, 1, 0);
+    }
+            
+    draw() {
+        const o = this.display.getOptions(); 
+        let w = o.width, h = o.height; 
+        
+        let fov = new ROT.FOV.PreciseShadowcasting(function(x, y) {
+            const key = x+','+y; 
+
+            let g = MyGame.map.ground[key];
+            let d = MyGame.map.objectDefinitions[g];
+            
+            if (!d || !d['light']) return false;
+            return d['light'];
+            /*if (!d || d['light'] === false) {
+
+            if (!MyGame.map.ground[key]) return false; // this.ground?
+            return true;*/
+        });
+
+        fov.compute(MyGame.player.x, MyGame.player.y, 18, function(x, y, r, visibility) {            
+            const key = x+','+y;   
+            MyGame.map.shadow[key] = "#fff"; // this.shadow?
+        });
+      
+        for (let x=0;x<w;++x) {
+        	for (let y=0;y<h;++y) {
+        		let xx = x + MyGame.camera.x - MyGame.camera.ox;
+        		let yy = y + MyGame.camera.y - MyGame.camera.oy;
+        		let key = xx+','+yy;   
+                let bg = this.shadow[key]; if (!bg) {
+                    this.display.draw(x, y, null);
+                    continue;
+                }
+                let ch = this.ground[key];
+                if (!ch) ch = "牆";
+                let de = MyGame.map.objectDefinitions[ch];
+                let fc = '#fff';
+                if (de && de['color']) {
+                    fc = de['color'];
+                }
+                if (this.shadow[key] === '#fff') this.display.draw(x, y, ch, fc);
+                else this.display.draw(x, y, ch, add_shadow(fc));                
+        	}
+        }
+
+        for (var key in this.boxes) {  
+            this.boxes[key].draw();
+        }
+
+        if (MyGame.player) MyGame.player.draw();
+        if (MyGame.pedro) MyGame.pedro.draw();
+
+        fov.compute(MyGame.player.x, MyGame.player.y, 25, function(x, y, r, visibility) {
+            const key = x+','+y;   
+            MyGame.map.shadow[key] = '#555';
+        }); 
+
+        MyGame.drawStatus();
+    }
+}
+
+// --------
+
 function Map(display, __game) {
     /* private variables */
 
@@ -2641,6 +2800,28 @@ const DISPLAY_FONTSIZE = 20;
 const DISPLAY_WIDTH = 40 * DISPLAY_FONTSIZE;
 const DISPLAY_HEIGHT = 25 * DISPLAY_FONTSIZE;
 
+function swap(a, b) {
+    let t = a;
+    a = b;
+    b = t;
+}
+
+class Inventory {
+    list = [];
+    add(item) {
+        this.list.push(item);
+    }
+    drop(item) {
+        for (let i=0;i<this.list.length;++i) {
+            if (this.list[i] === item) {
+                this.list[i] = this.list[this.list.length - 1];
+                this.list.pop();
+            }
+        }
+    }
+}
+
+
 // https://stackoverflow.com/questions/12143544/how-to-multiply-two-colors-in-javascript
 function add_shadow(c1, d) {
     if (c1[0] !== '#') {
@@ -2708,119 +2889,6 @@ class Camera {
         } else {
         	this.adjust();	
         }
-    }
-}
-
-class MyMap {
-
-    display = null;    
-    width = 0; height = 0;    
-    ground = {};
-    shadow = {};
-    boxes = {};
-    color = {};
-    objectDefinitions = {};
-
-    constructor() {
-        this.display = new ROT.Display({
-        	width: DISPLAY_WIDTH / DISPLAY_FONTSIZE,
-        	height: DISPLAY_HEIGHT / DISPLAY_FONTSIZE,
-        	fontSize: DISPLAY_FONTSIZE,
-            space: 1.1,
-            fontFamily: "Helvetica",
-        });
-
-        this.defineObject('　', {
-            'symbol': '　',
-            'pass': true,        
-            'light': true,
-        });    
-    
-        this.defineObject('牆', {
-            'symbol': '牆',
-            'pass': false,        
-            'light': false,
-            'torch': function() {
-            },        
-            'behavior': function (me) {
-                me.move(raftDirection);
-            }
-        });
-    }
-
-    defineObject(name, properties) {
-        if (this.objectDefinitions[name]) {
-            throw "There is already a type of object named " + name + "!";
-        }
-        this.objectDefinitions[name] = properties;
-    }
-
-    createBeing(what, freeCells) {
-        var index = Math.floor(ROT.RNG.getUniform() * freeCells.length);
-        var key = freeCells.splice(index, 1)[0];
-        var parts = key.split(",");
-        var x = parseInt(parts[0]);
-        var y = parseInt(parts[1]);      
-        return new what(x, y, 7, 10, 5, 1, 0);
-    }
-            
-    draw() {
-        const o = this.display.getOptions(); 
-        let w = o.width, h = o.height; 
-        
-        let fov = new ROT.FOV.PreciseShadowcasting(function(x, y) {
-            const key = x+','+y; 
-
-            let g = MyGame.map.ground[key];
-            let d = MyGame.map.objectDefinitions[g];
-            
-            if (!d || !d['light']) return false;
-            return d['light'];
-            /*if (!d || d['light'] === false) {
-
-            if (!MyGame.map.ground[key]) return false; // this.ground?
-            return true;*/
-        });
-
-        fov.compute(MyGame.player.x, MyGame.player.y, 18, function(x, y, r, visibility) {            
-            const key = x+','+y;   
-            MyGame.map.shadow[key] = "#fff"; // this.shadow?
-        });
-      
-        for (let x=0;x<w;++x) {
-        	for (let y=0;y<h;++y) {
-        		let xx = x + MyGame.camera.x - MyGame.camera.ox;
-        		let yy = y + MyGame.camera.y - MyGame.camera.oy;
-        		let key = xx+','+yy;   
-                let bg = this.shadow[key]; if (!bg) {
-                    this.display.draw(x, y, null);
-                    continue;
-                }
-                let ch = this.ground[key];
-                if (!ch) ch = "牆";
-                let de = MyGame.map.objectDefinitions[ch];
-                let fc = '#fff';
-                if (de && de['color']) {
-                    fc = de['color'];
-                }
-                if (this.shadow[key] === '#fff') this.display.draw(x, y, ch, fc);
-                else this.display.draw(x, y, ch, add_shadow(fc));                
-        	}
-        }
-
-        for (var key in this.boxes) {  
-            this.boxes[key].draw();
-        }
-
-        if (MyGame.player) MyGame.player.draw();
-        if (MyGame.pedro) MyGame.pedro.draw();
-
-        fov.compute(MyGame.player.x, MyGame.player.y, 25, function(x, y, r, visibility) {
-            const key = x+','+y;   
-            MyGame.map.shadow[key] = '#555';
-        }); 
-
-        MyGame.drawStatus();
     }
 }
 
@@ -2934,7 +3002,8 @@ class Being {
         this._HP = hp; this.HP = hp; this.hp = hp;
         this._MP = mp; this.MP = mp; this.mp = mp;
         this._ap = this.ap = ap;
-        this._dp = this.dp = dp;        
+        this._dp = this.dp = dp;   
+        this.inventory = new Inventory();     
     }
     dead() {
         this.ch = '死'; this.color = '#222';
@@ -2974,8 +3043,17 @@ class MyPlayer extends Being {
     }
     handleEvent(e) {     
 
+
+
         var code = e.keyCode;
         if (code == 13 || code == 32) {
+            var key = this.x + "," + this.y;
+            let g = MyGame.map.ground[key];
+            let d = MyGame.map.objectDefinitions[g];   
+
+            if (d['open']) {
+                d['open']();
+            }
             this.checkBox();
             return;
         }
@@ -3007,23 +3085,16 @@ class MyPlayer extends Being {
 
         var newKey = newX + "," + newY;
         if (!(newKey in MyGame.map.ground)) { return; }
-
-        console.log(newKey);
-
         let g = MyGame.map.ground[newKey];
-
-        console.log(g);
-        let d = MyGame.map.objectDefinitions[g];
-
+        let d = MyGame.map.objectDefinitions[g];        
+       
         if (d) {
             if (d['touch']) {
                 d['touch']();
             }
         }
 
-
-        
-        if (!d || d['pass'] === false) {
+        if (!MyGame.map.pass(newKey)) {
             return;
         }
         
@@ -4547,7 +4618,7 @@ Game.prototype.openHelp = function () {
     }
 };
 Game.prototype._levels = {
-    'levels/main.jsx': '#BEGIN_PROPERTIES#\n{\n    "version": "1.2",\n    "commandsIntroduced":\n        ["map.getObjectTypeAt", "player.getX", "player.getY", "player.getItem",\n         "map.refresh"],\n    "mapProperties": {\n        "allowOverwrite": true\n    },\n    "music": "Aquaria_Title"\n}\n#END_PROPERTIES#\n/*******************\n * 籠中之鳥 *\n *******************\n * ...\n * 夜色漸深，伊莎貝拉從假寐中緩緩睜開雙眼，\n * 早晨就是約定交質的日子了，\n * 要逃跑的話，只有抓住現在。\n */\n#BEGIN_EDITABLE#\nlet _game = null;\nlet _map = null;\nlet _player = null;\n\n/*\nmap.defineObject(\'water\', {\n    \'symbol\': \'░\',\n    \'color\': \'#44f\',\n    \'onCollision\': function (player) {\n        player.killedBy(\'drowning in deep dark water\');\n    }\n});*/\n\nfunction initMap() {\n    var grid = [\n        \'牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆關關牆牆牆牆牆牆牆牆牆牆牆牆牆\',\n        \'牆　　　　　　　　　　　　　牆　　牆　　　　　　　　　　　　　　　　　　　　　牆\',\n        \'牆　　　　　　　　　　　　　牆　　牆　　　　　　　　　　　　　　　　　　　　　牆\',\n        \'牆　　　　　　　　　　　　　牆　　牆　　　　　　　　　　　　　　　　　　　　　牆\',\n        \'牆　　　　　　　　　　　　　牆關關牆　　　　　　　　　　　　　　　　　　　　　牆\',\n        \'牆　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　牆\',\n        \'牆　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　牆\',                            \n        \'牆　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　牆\',\n        \'牆　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　牆\',\n        \'牆牆牆牆牆牆牆牆牆牆牆牆關關牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆關關牆牆牆牆\',\n        \'牆　劍　　　　　　　　　　　　櫃櫃牆　　　　　　　　　　　牆　　　　　　　　　牆\',\n        \'牆　　　　　　　　　　　　　　櫃櫃牆　　　　　　　　　　　牆　　　　　　　　　牆\',\n        \'牆　　　　　　　　　　　　　　櫃櫃牆　　　　　　　　　　　牆　　　　　　　　　牆\',\n        \'牆桌　　床床　　　　　　　　　櫃櫃牆　　　　　　　　　　　牆　　　　　　　　　牆\',\n        \'牆鏡　　床床　　　　　　　　　櫃櫃牆　　　　　　　　　　　牆　　　　　　　　　牆\',\n        \'牆桌　伊床床　櫃　　　　　　　櫃櫃牆　　　　　　　　　　　牆　　　　　　　　　牆\',\n        \'牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆\'\n      ];\n\n    _map.defineObject(\'劍\', {\n        \'verdict_poetry\': \n            \'几片晴沙映野田，数声清笛落秋烟。\\n \\\n             海天浩瀚孤云外，树杪依微夕照边。\\n \\\n             远浦人归渔火近，敢辞先赐即求田。\\n \\\n             只言三尺青丝鞚，肯作龙骧九万弦。\\n\',\n        \'description\':  \n            \'少女慣用的愛劍，劍身如水，澄澈如鏡，是謂「水鏡」。可以將劍身周圍的元素魔法，轉化為水係魔法，為己所用。\\n \\\n             ATK: 7d2\',\n        \'symbol\': \'劍\',\n        \'color\': \'#2fe\',\n        \'pass\': true,\n        \'light\': true,        \n        \'open\': function() {\n            alert("你回收了愛劍");\n        },\n        \'behavior\': function (me) {\n            me.move(raftDirection);\n        }\n    });\n    \n    _map.defineObject(\'床\', {\n        \'symbol\': \'床\',\n        \'pass\': false,        \n        \'light\': true\n    });       \n\n    _map.defineObject(\'門\', {\n        \'symbol\': \'門\',\n        \'pass\': false,        \n        \'light\': false,\n        \'torch\': function() {\n            alert("无法通行");\n        },        \n        \'behavior\': function (me) {\n            me.move(raftDirection);\n        }\n    });  \n\n    _map.defineObject(\'鏡\', {\n        \'symbol\': \'鏡\',\n        \'pass\': false,        \n        \'light\': false,\n        \'color\': \'#3fe\',\n        \'a\': "鏡中映射出少女的容顏",\n        \'touch\': function() {\n            alert(this[\'a\']);            \n        },        \n        \'behavior\': function (me) {\n            me.move(raftDirection);\n        }\n    });       \n\n\n\n    let w = grid[0].length;\n    let h = grid.length;\n    _map.width = w;\n    _map.height = h;\n    for (let i=0;i<w;++i) {\n        for (let j=0;j<h;++j) {\n            let c = grid[j][i];\n            const key = i+\',\'+j;\n            if (c === \'伊\') {\n                _game.player = new _game._MyPlayer(i, j, 7, 10, 5, 1, 0);\n                _player = _game.player;\n                c = \'　\';\n            }\n            _map.ground[key] = c;            \n            _map.shadow[key] = \'#555\';\n        }\n    }\n}\n\nfunction init() {\n    _game.init(); \n    _map = _game.map;\n    initMap();\n    _game.initCamera();\n    _game.draw(); \n\n    console.log(_player);\n    \n    var scheduler = new ROT.Scheduler.Simple();\n    scheduler.add(_player, true);\n    _game.engine = new ROT.Engine(scheduler);\n    console.log(_game.engine);\n    _game.engine.start();\n}\n#END_EDITABLE#\nfunction startLevel(map) {\n#START_OF_START_LEVEL#\n    map.displayChapter(\'第 一 章\\n籠 中 之 鳥\');\n    _game = map._game.myGame;\n    map.placePlayer(0,0);\n    let p = map.getPlayer();\n    p.getItem(\'phone\');\n    p.getItem(\'computer\');\n    p.getItem(\'blueKey\');\n    init();\n/*    map.defineObject(\'door\', {\n        \'symbol\': \'n\',\n        \'color\': \'#88f\',\n        \'onCollision\': function (player) {\n            game.sound.playSE(\'魔王魂/[魔王]ドア開.ogg\');\n        }\n    });*/\n#END_OF_START_LEVEL#\n}\n ', 
+    'levels/main.jsx': '#BEGIN_PROPERTIES#\n{\n    "version": "1.2",\n    "commandsIntroduced":\n        ["map.getObjectTypeAt", "player.getX", "player.getY", "player.getItem",\n         "map.refresh"],\n    "mapProperties": {\n        "allowOverwrite": true\n    },\n    "music": "Aquaria_Title"\n}\n#END_PROPERTIES#\n/*******************\n * 籠中之鳥 *\n *******************\n * ...\n * 夜色漸深，伊莎貝拉從假寐中緩緩睜開雙眼，\n * 早晨就是約定交質的日子了，\n * 要逃跑的話，只有抓住現在。\n */\n#BEGIN_EDITABLE#\nlet _game = null;\nlet _map = null;\nlet _player = null;\n\n/*\nmap.defineObject(\'water\', {\n    \'symbol\': \'░\',\n    \'color\': \'#44f\',\n    \'onCollision\': function (player) {\n        player.killedBy(\'drowning in deep dark water\');\n    }\n});*/\n\nfunction initMap() {\n    var grid = [\n        \'牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆關關牆牆牆牆牆牆牆牆牆牆牆牆牆\',\n        \'牆　　　　　　　　　　　　　牆　　牆　　　　　　　　　　　　　　　　　　　　　牆\',\n        \'牆　　　　　　　　　　　　　牆　　牆　　　　　　　　　　　　　　　　　　　　　牆\',\n        \'牆　　　　　　　　　　　　　牆　　牆　　　　　　　　　　　　　　　　　　　　　牆\',\n        \'牆　　　　　　　　　　　　　牆關關牆　　　　　　　　　　　　　　　　　　　　　牆\',\n        \'牆　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　牆\',\n        \'牆　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　牆\',                            \n        \'牆　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　牆\',\n        \'牆　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　牆\',\n        \'牆牆牆牆牆牆牆牆牆牆牆牆關關牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆關關牆牆牆牆\',\n        \'牆　劍　　　　　　　　　　　　櫃櫃牆　　　　　　　　　　　牆　　　　　　　　　牆\',\n        \'牆　　　　　　　　　　　　　　櫃櫃牆　　　　　　　　　　　牆　　　　　　　　　牆\',\n        \'牆　　　　　　　　　　　　　　櫃櫃牆　　　　　　　　　　　牆　　　　　　　　　牆\',\n        \'牆桌　　床床　　　　　　　　　櫃櫃牆　　　　　　　　　　　牆　　　　　　　　　牆\',\n        \'牆鏡　　床床　　　　　　　　　櫃櫃牆　　　　　　　　　　　牆　　　　　　　　　牆\',\n        \'牆桌　伊床床　櫃　　　　　　　櫃櫃牆　　　　　　　　　　　牆　　　　　　　　　牆\',\n        \'牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆\'\n      ];\n\n    _map.defineObject(\'劍\', {\n        \'verdict_poetry\': \n            \'几片晴沙映野田，数声清笛落秋烟。\\n \\\n             海天浩瀚孤云外，树杪依微夕照边。\\n \\\n             远浦人归渔火近，敢辞先赐即求田。\\n \\\n             只言三尺青丝鞚，肯作龙骧九万弦。\\n\',\n        \'description\':  \n            \'少女慣用的愛劍，劍身如水，澄澈如鏡，是謂「水鏡」。可以將劍身周圍的元素魔法，轉化為水係魔法，為己所用。\\n \\\n             ATK: 7d2\',\n        \'symbol\': \'劍\',\n        \'color\': \'#2fe\',\n        \'pass\': true,\n        \'light\': true,        \n        \'open\': function(handle) {\n            alert("你回收了愛劍")\n            handle = null;\n        },\n        \'behavior\': function (me) {\n            me.move(raftDirection);\n        }\n    });\n    \n    _map.defineObject(\'床\', {\n        \'symbol\': \'床\',\n        \'pass\': false,        \n        \'light\': true\n    });       \n\n    _map.defineObject(\'鏡\', {\n        \'symbol\': \'鏡\',\n        \'pass\': false,        \n        \'light\': false,\n        \'color\': \'#3fe\',\n        \'a\': "鏡中映射出少女的容顏",\n        \'touch\': function() {\n            alert(this[\'a\']);            \n        },        \n        \'behavior\': function (me) {\n            me.move(raftDirection);\n        }\n    });\n\n    let w = grid[0].length;\n    let h = grid.length;\n    _map.width = w;\n    _map.height = h;\n    for (let i=0;i<w;++i) {\n        for (let j=0;j<h;++j) {\n            let c = grid[j][i];\n            const key = i+\',\'+j;\n            if (c === \'伊\') {\n                _game.player = new _game._MyPlayer(i, j, 7, 10, 5, 1, 0);\n                _player = _game.player;\n                c = \'　\';\n            }\n            if (c === \'關\') {\n                console.log(\'關\', key);\n            }\n            _map.ground[key] = c;            \n            _map.shadow[key] = \'#555\';\n        }\n    }\n}\n\nfunction init() {\n    _game.init(); \n    _map = _game.map;\n    initMap();\n    _game.initCamera();\n    _game.draw(); \n\n    console.log(_player);\n    \n    var scheduler = new ROT.Scheduler.Simple();\n    scheduler.add(_player, true);\n    _game.engine = new ROT.Engine(scheduler);\n    console.log(_game.engine);\n    _game.engine.start();\n}\n#END_EDITABLE#\nfunction startLevel(map) {\n#START_OF_START_LEVEL#\n    map.displayChapter(\'第 一 章\\n籠 中 之 鳥\');\n    _game = map._game.myGame;\n    map.placePlayer(0,0);\n    let p = map.getPlayer();\n    p.getItem(\'phone\');\n    p.getItem(\'computer\');\n    p.getItem(\'blueKey\');\n    init();\n/*    map.defineObject(\'door\', {\n        \'symbol\': \'n\',\n        \'color\': \'#88f\',\n        \'onCollision\': function (player) {\n            game.sound.playSE(\'魔王魂/[魔王]ドア開.ogg\');\n        }\n    });*/\n#END_OF_START_LEVEL#\n}\n ', 
 };
 $(document).ready(function() {
     var startLevel = getParameterByName('lvl') ? parseInt(getParameterByName('lvl')) : null;
