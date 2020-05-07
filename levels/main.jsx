@@ -88,7 +88,10 @@ function initMap() {
         'color': '#3fe',
         'a': "鏡中映射出少女的容顏",
         'touch': function() {
-            alert(this['a']);            
+            //alert(this['a']);     
+            alert(123);       
+            _player.addItem('臥室門鑰匙');
+            console.log(_player.inventory.list);
         },        
         'behavior': function (me) {
             me.move(raftDirection);
@@ -100,8 +103,7 @@ function initMap() {
         'pass': false,
         'light': false,
         'touch': function() {
-            if (true) { // 有鑰匙
-                alert("123");
+            if (_player.inventory.hasItem('臥室門鑰匙')) {
                 this['symbol'] = '門';
                 this['pass'] = true;
                 this['light'] = true;
@@ -125,9 +127,10 @@ function initMap() {
                 _player = _game.player;
                 c = '　';
             }
-            /*if (c === '關') {
-                console.log('關', key);
-            }*/
+            if (c === '關') {
+                c = '　';
+                // console.log('關', key);
+            }
             _map.ground[key] = c;            
             _map.shadow[key] = '#555';
         }

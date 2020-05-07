@@ -74,10 +74,11 @@ class MyMap {
         let d = this.objectDefinitions[c];        
         if (!d || !d['pass']) return false;
         if (this.layer[key]) {
-            this.layer[key].forEach(function (t) {
+            for (let i=0;i<this.layer[key].length;++i) { 
+                let t = this.layer[key][i];
                 let d = MyGame.map.objectDefinitions[t];
-                if (!d || !d['pass']) return false;
-            });
+                if (!d || !d['pass']) return false;                
+            }
         }
         return true;
     }
@@ -87,11 +88,12 @@ class MyMap {
         if (!c) c = this.default_tile;
         let d = this.objectDefinitions[c];        
         if (!d || !d['light']) return false;
-        if (this.layer[key]) { 
-            this.layer[key].forEach(function (t) {
+        if (this.layer[key]) {
+            for (let i=0;i<this.layer[key].length;++i) { 
+                let t = this.layer[key][i];
                 let d = MyGame.map.objectDefinitions[t];
-                if (!d || !d['light']) return false;
-            });
+                if (!d || !d['light']) return false;                
+            }
         }
         return true;
     }    

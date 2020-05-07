@@ -10,7 +10,12 @@ function swap(a, b) {
 
 class Inventory {
     list = [];
-    add(item) {
+    constructor() {
+        this.list = [];
+    }
+    addItem(item) {
+        alert(123);       
+
         this.list.push(item);
     }
     drop(item) {
@@ -20,6 +25,13 @@ class Inventory {
                 this.list.pop();
             }
         }
+    }
+    hasItem(item) {
+        for (let i=0;i<this.list.length;++i) {
+            let t = this.list[i];
+            if (t === item) return true;
+        }
+        return false;
     }
 }
 
@@ -213,6 +225,12 @@ class Being {
     draw() {
         MyGame.map.display.draw(this.x - MyGame.camera.x + MyGame.camera.ox, this.y - MyGame.camera.y + MyGame.camera.oy, this.ch, this.color);
     }
+    hasItem(item) {
+        return this.inventory.hasItem(item);
+    }
+    addItem(item) {
+        this.inventory.addItem(item);
+    }
 }
 
 class MyPlayer extends Being {
@@ -291,11 +309,7 @@ class MyPlayer extends Being {
 
         MyGame.map.touch(newKey);
 
-        if (!MyGame.map.pass(newKey)) {
-            return;
-        }
-
-
+        if (!MyGame.map.pass(newKey)) return;
 
         if (MyGame.pedro && MyGame.pedro.x === newX && MyGame.pedro.y === newY) {
             
