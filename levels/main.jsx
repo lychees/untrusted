@@ -43,7 +43,7 @@ function initMap() {
         '牆　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　牆',                            
         '牆　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　牆',
         '牆　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　　牆',
-        '牆牆牆牆牆牆牆牆牆牆牆牆關關牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆關關牆牆牆牆',
+        '牆牆牆牆牆牆牆牆牆牆牆牆門門牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆牆關關牆牆牆牆',
         '牆　劍　　　　　　　　　　　　櫃櫃牆　　　　　　　　　　　牆　　　　　　　　　牆',
         '牆　　　　　　　　　　　　　　櫃櫃牆　　　　　　　　　　　牆　　　　　　　　　牆',
         '牆　　　　　　　　　　　　　　櫃櫃牆　　　　　　　　　　　牆　　　　　　　　　牆',
@@ -96,8 +96,19 @@ function initMap() {
     });
 
     _map.defineObject('臥室門', {
+        'symbol': '關',
+        'pass': false,
+        'light': false,
         'touch': function() {
-            alert('where is key?');            
+            if (true) { // 有鑰匙
+                alert("123");
+                this['symbol'] = '門';
+                this['pass'] = true;
+                this['light'] = true;
+                this['touch'] = null;          
+            } else {
+                alert('where is key?');
+            }
         }
     });       
 
@@ -114,9 +125,9 @@ function initMap() {
                 _player = _game.player;
                 c = '　';
             }
-            if (c === '關') {
+            /*if (c === '關') {
                 console.log('關', key);
-            }
+            }*/
             _map.ground[key] = c;            
             _map.shadow[key] = '#555';
         }

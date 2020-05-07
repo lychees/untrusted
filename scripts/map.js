@@ -111,6 +111,32 @@ class MyMap {
         var y = parseInt(parts[1]);      
         return new what(x, y, 7, 10, 5, 1, 0);
     }
+
+    drawTileAt(x, y, key) {
+        let bg = this.shadow[key]; if (!bg) {
+            this.display.draw(x, y, null);
+            return;
+        }
+        let ch = this.ground[key];
+        if (this.layer[key]) { 
+            this.layer[key].forEach(function (t) {
+                let d = MyGame.map.objectDefinitions[t];
+                if (d && d.symbol) {
+                    ch = d.symbol;
+                }
+            });
+        }
+
+
+        if (!ch) ch = this.default_tile;
+        let de = MyGame.map.objectDefinitions[ch];
+        let fc = this.default_color;
+        if (de && de['color']) {
+            fc = de['color'];
+        }
+        if (this.shadow[key] === '#fff') this.display.draw(x, y, ch, fc);
+        else this.display.draw(x, y, ch, add_shadow(fc));  
+    }
             
     draw() {
         const o = this.display.getOptions(); 
@@ -129,21 +155,9 @@ class MyMap {
         for (let x=0;x<w;++x) {
         	for (let y=0;y<h;++y) {
         		let xx = x + MyGame.camera.x - MyGame.camera.ox;
-        		let yy = y + MyGame.camera.y - MyGame.camera.oy;
-        		let key = xx+','+yy;   
-                let bg = this.shadow[key]; if (!bg) {
-                    this.display.draw(x, y, null);
-                    continue;
-                }
-                let ch = this.ground[key];
-                if (!ch) ch = "牆";
-                let de = MyGame.map.objectDefinitions[ch];
-                let fc = '#fff';
-                if (de && de['color']) {
-                    fc = de['color'];
-                }
-                if (this.shadow[key] === '#fff') this.display.draw(x, y, ch, fc);
-                else this.display.draw(x, y, ch, add_shadow(fc));                
+                let yy = y + MyGame.camera.y - MyGame.camera.oy;
+                let key = xx+','+yy;
+                this.drawTileAt(x, y, key);
         	}
         }
 
