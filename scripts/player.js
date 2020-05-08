@@ -8,32 +8,6 @@ function swap(a, b) {
     b = t;
 }
 
-class Inventory {
-    list = [];
-    constructor() {
-        this.list = [];
-    }
-    addItem(item) {
-        this.list.push(item);
-    }
-    drop(item) {
-        for (let i=0;i<this.list.length;++i) {
-            if (this.list[i] === item) {
-                this.list[i] = this.list[this.list.length - 1];
-                this.list.pop();
-            }
-        }
-    }
-    hasItem(item) {
-        for (let i=0;i<this.list.length;++i) {
-            let t = this.list[i];
-            if (t === item) return true;
-        }
-        return false;
-    }
-}
-
-
 // https://stackoverflow.com/questions/12143544/how-to-multiply-two-colors-in-javascript
 function add_shadow(c1, d) {
     if (c1[0] !== '#') {
@@ -237,6 +211,7 @@ class MyPlayer extends Being {
         MyGame.map.touch(newKey);
 
         if (!MyGame.map.pass(newKey)) return;
+
 
         if (MyGame.pedro && MyGame.pedro.x === newX && MyGame.pedro.y === newY) {
             

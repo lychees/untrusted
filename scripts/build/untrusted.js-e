@@ -178,6 +178,7 @@ var MyGame = {
     camera: null,    
     player: null,
     pedro: null,
+    agents: [],
     ananas: null,
     _game: null,
     logs: [],
@@ -255,12 +256,19 @@ var MyGame = {
     },      
     
     drawStatus() {
+        /*
         this.status_display.drawText(0, 0, "伊莎貝拉");
         this.status_display.drawText(0, 1, ROT.Util.format("生命 %s/%s", this.player.hp, this.player.HP));
         this.status_display.drawText(0, 2, ROT.Util.format("魔力 %s/%s", this.player.mp, this.player.MP));        
         this.status_display.drawText(0, 3, ROT.Util.format("速 %s\n", this.player.speed));
         this.status_display.drawText(0, 4, ROT.Util.format("攻 %s\n", this.player.ap));
-        this.status_display.drawText(0, 5, ROT.Util.format("防 %s\n", this.player.dp));
+        this.status_display.drawText(0, 5, ROT.Util.format("防 %s\n", this.player.dp));*/
+        let T = "伊莎貝拉";
+        T += "生命 ";
+        T += this.player.hp;
+        T += "/ ";
+        T += this.player.HP;
+        $('#inventory').text(T);
     },
 
     draw() {
@@ -1686,6 +1694,33 @@ function DynamicObject(map, type, x, y, __game) {
         this._onTurn();
     }
 }
+class Inventory {
+    list = [];
+    constructor() {
+        this.list = [];
+    }
+    addItem(item) {
+        this.list.push(item);
+    }
+    drop(item) {
+        for (let i=0;i<this.list.length;++i) {
+            if (this.list[i] === item) {
+                this.list[i] = this.list[this.list.length - 1];
+                this.list.pop();
+            }
+        }
+    }
+    hasItem(item) {
+        for (let i=0;i<this.list.length;++i) {
+            let t = this.list[i];
+            if (t === item) return true;
+        }
+        return false;
+    }
+}
+
+// ————————
+
 Game.prototype.inventory = [];
 
 Game.prototype.getItemDefinition = function (itemName) {
@@ -1772,8 +1807,14 @@ Game.prototype.setInventoryStateByLevel = function (levelNum) {
 };
 
 Game.prototype.drawInventory = function () {
-	var game = this;
 
+	/*
+	var game = this;
+	let T = '伊莎貝拉 ';
+	T += 'HP';
+	$('#inventory').text(T); */
+
+	
 	if (this.inventory.length > 0) {
 		$('#inventory').text('INVENTORY: ');
 
@@ -1788,7 +1829,7 @@ Game.prototype.drawInventory = function () {
 		});
 	} else {
 		$('#inventory').html('');
-	}
+	} 
 };
 
 /* methods relating to specific inventory items go here */
@@ -1974,8 +2015,9 @@ class MyMap {
             this.boxes[key].draw();
         }
 
-        if (MyGame.player) MyGame.player.draw();
-        if (MyGame.pedro) MyGame.pedro.draw();
+        for (let i=0;i<MyGame.agents.length;++i) {
+            MyGame.agents[i].draw();
+        }
 
         fov.compute(MyGame.player.x, MyGame.player.y, 25, function(x, y, r, visibility) {
             const key = x+','+y;   
@@ -2931,32 +2973,6 @@ function swap(a, b) {
     b = t;
 }
 
-class Inventory {
-    list = [];
-    constructor() {
-        this.list = [];
-    }
-    addItem(item) {
-        this.list.push(item);
-    }
-    drop(item) {
-        for (let i=0;i<this.list.length;++i) {
-            if (this.list[i] === item) {
-                this.list[i] = this.list[this.list.length - 1];
-                this.list.pop();
-            }
-        }
-    }
-    hasItem(item) {
-        for (let i=0;i<this.list.length;++i) {
-            let t = this.list[i];
-            if (t === item) return true;
-        }
-        return false;
-    }
-}
-
-
 // https://stackoverflow.com/questions/12143544/how-to-multiply-two-colors-in-javascript
 function add_shadow(c1, d) {
     if (c1[0] !== '#') {
@@ -3160,6 +3176,7 @@ class MyPlayer extends Being {
         MyGame.map.touch(newKey);
 
         if (!MyGame.map.pass(newKey)) return;
+
 
         if (MyGame.pedro && MyGame.pedro.x === newX && MyGame.pedro.y === newY) {
             
@@ -4681,7 +4698,7 @@ Game.prototype.openHelp = function () {
     }
 };
 Game.prototype._levels = {
-    'levels/main.jsx': '#BEGIN_PROPERTIES#\n{\n    "version": "1.2",\n    "commandsIntroduced": ["ROT.Map.DividedMaze", "player.atLocation"],\n    "music": "gurh"\n}\n#END_PROPERTIES#\n#BEGIN_EDITABLE#\n/********************\n * 逃亡 *\n ********************\n *\n * 伊莎貝拉的逃亡計畫很快敗露。\n */\nlet _game = null;\nlet _map = null;\nlet _player = null;\nlet _pedro = null;\n\nconst MAP_WIDTH = 16;\nconst MAP_HEIGHT = 16;\n\nfunction generateBoxes(freeCells) {\n    for (var i=0;i<100;i++) {\n        var index = Math.floor(ROT.RNG.getUniform() * freeCells.length);\n        var key = freeCells.splice(index, 1)[0];\n        var parts = key.split(",");\n        var x = parseInt(parts[0]);\n        var y = parseInt(parts[1]); \n        _map.boxes[key] = new _game._Box(x, y);  \n    }\n}\n\nfunction pop_random(cells) {\n    let index = Math.floor(ROT.RNG.getUniform() * cells.length);\n    let key = cells.splice(index, 1)[0];\n    return key;\n}\n\nfunction init() {\n    \n    _game.init(); \n    _map = _game.map;\n\n    _map.defineObject(\'上\', {\n        \'symbol\': \'上\',\n        \'pass\': true,\n        \'light\': true,\n        \'color\': \'#eee\',   \n        \'open\': function(handle) {\n            _game.SE.playSound(\'complete\');\n            _game.getLevelByPath(\'levels/bonus/1-the-imorisoned-bird.jsx\');\n            // alert("你回收了愛劍");\n        },\n    });        \n\n    _map.width = MAP_WIDTH;\n    _map.height = MAP_HEIGHT;\n    var digger = new ROT.Map.Digger(_map.width, _map.height);\n    //var digger = new ROT.Map.Arena(_map.width, _map.height); \n\n    let freeCells = [];        \n    var digCallback = function(x, y, value) {\n        if (value) { return; }            \n        var key = x+","+y;\n        _map.ground[key] = "　";\n        freeCells.push(key);\n    }\n    digger.create(digCallback.bind(this));\n    //generateBoxes(freeCells); \n    _game.player = _map.createBeing(_game._MyPlayer, freeCells);\n    _game.pedro = _map.createBeing(_game._Pedro, freeCells);\n    _player = _game.player;\n    _pedro = _game.pedro;\n\n    let t = pop_random(freeCells);\n    _map.ground[t] = \'上\';\n\n    _game.initCamera();\n    _game.draw(); \n    \n    var scheduler = new ROT.Scheduler.Simple();\n    scheduler.add(_player, true);\n    scheduler.add(_pedro, true);\n    _game.engine = new ROT.Engine(scheduler);        \n    _game.engine.start();\n}\n\n#END_EDITABLE#\nfunction startLevel(map) {\n#START_OF_START_LEVEL#\n    _game = map._game.myGame;\n    _game._game = map._game;\n\n    console.log(_game._game);\n\n    map.placePlayer(0,0);\n    let p = map.getPlayer();\n    p.getItem(\'phone\');\n    p.getItem(\'computer\');\n    p.getItem(\'blueKey\');\n    init();\n#END_OF_START_LEVEL#\n}\n ', 
+    'levels/main.jsx': '#BEGIN_PROPERTIES#\n{\n    "version": "1.2",\n    "commandsIntroduced": ["ROT.Map.DividedMaze", "player.atLocation"],\n    "music": "gurh"\n}\n#END_PROPERTIES#\n#BEGIN_EDITABLE#\n/********************\n * 逃亡 *\n ********************\n *\n * 伊莎貝拉的逃亡計畫很快敗露。\n */\nlet _game = null;\nlet _map = null;\nlet _player = null;\nlet _pedro = null;\nlet _agents = null;\n\nconst MAP_WIDTH = 16;\nconst MAP_HEIGHT = 16;\n\nfunction generateBoxes(freeCells) {\n    for (var i=0;i<100;i++) {\n        var index = Math.floor(ROT.RNG.getUniform() * freeCells.length);\n        var key = freeCells.splice(index, 1)[0];\n        var parts = key.split(",");\n        var x = parseInt(parts[0]);\n        var y = parseInt(parts[1]); \n        _map.boxes[key] = new _game._Box(x, y);  \n    }\n}\n\nfunction pop_random(cells) {\n    let index = Math.floor(ROT.RNG.getUniform() * cells.length);\n    let key = cells.splice(index, 1)[0];\n    return key;\n}\n\nfunction init() {\n    \n    _game.init(); \n    _map = _game.map;\n\n    _map.defineObject(\'上\', {\n        \'symbol\': \'上\',\n        \'pass\': true,\n        \'light\': true,\n        \'color\': \'#eee\',   \n        \'open\': function(handle) {\n            _game.SE.playSound(\'complete\');\n            _game.getLevelByPath(\'levels/bonus/1-the-imorisoned-bird.jsx\');\n            // alert("你回收了愛劍");\n        },\n    });        \n\n    _map.width = MAP_WIDTH;\n    _map.height = MAP_HEIGHT;\n    var digger = new ROT.Map.Digger(_map.width, _map.height);\n    //var digger = new ROT.Map.Arena(_map.width, _map.height); \n\n    let freeCells = [];        \n    var digCallback = function(x, y, value) {\n        if (value) { return; }            \n        var key = x+","+y;\n        _map.ground[key] = "　";\n        freeCells.push(key);\n    }\n    digger.create(digCallback.bind(this));\n    //generateBoxes(freeCells); \n    _game.player = _map.createBeing(_game._MyPlayer, freeCells);\n    _game.pedro = _map.createBeing(_game._Pedro, freeCells);\n    _player = _game.player;\n    _pedro = _game.pedro;\n    _agents = _game.agents;\n    _agents.push(_player);\n    _agents.push(_pedro);\n\n    \n    let t = pop_random(freeCells);\n    _map.ground[t] = \'上\';\n\n    for (let i=0;i<2;++i) {\n        let t = pop_random(freeCells);\n        let parts = t.split(",");\n        let x = parseInt(parts[0]);\n        let y = parseInt(parts[1]);   \n        _agents.push(new _game._Pedro(x, y, 7, 10, 5, 1, 0));\n    }\n\n    _game.initCamera();\n    _game.draw(); \n    \n    var scheduler = new ROT.Scheduler.Simple();\n    scheduler.add(_player, true);\n    scheduler.add(_pedro, true);\n    _game.engine = new ROT.Engine(scheduler);        \n    _game.engine.start();\n}\n\n#END_EDITABLE#\nfunction startLevel(map) {\n#START_OF_START_LEVEL#\n    _game = map._game.myGame;\n    _game._game = map._game;\n    map.placePlayer(0,0);\n    let p = map.getPlayer();\n    p.getItem(\'phone\');\n    p.getItem(\'computer\');\n    p.getItem(\'blueKey\');\n    init();\n#END_OF_START_LEVEL#\n}\n ', 
 };
 $(document).ready(function() {
     var startLevel = getParameterByName('lvl') ? parseInt(getParameterByName('lvl')) : null;

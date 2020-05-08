@@ -1,3 +1,30 @@
+class Inventory {
+    list = [];
+    constructor() {
+        this.list = [];
+    }
+    addItem(item) {
+        this.list.push(item);
+    }
+    drop(item) {
+        for (let i=0;i<this.list.length;++i) {
+            if (this.list[i] === item) {
+                this.list[i] = this.list[this.list.length - 1];
+                this.list.pop();
+            }
+        }
+    }
+    hasItem(item) {
+        for (let i=0;i<this.list.length;++i) {
+            let t = this.list[i];
+            if (t === item) return true;
+        }
+        return false;
+    }
+}
+
+// ————————
+
 Game.prototype.inventory = [];
 
 Game.prototype.getItemDefinition = function (itemName) {
@@ -84,8 +111,14 @@ Game.prototype.setInventoryStateByLevel = function (levelNum) {
 };
 
 Game.prototype.drawInventory = function () {
-	var game = this;
 
+	/*
+	var game = this;
+	let T = '伊莎貝拉 ';
+	T += 'HP';
+	$('#inventory').text(T); */
+
+	
 	if (this.inventory.length > 0) {
 		$('#inventory').text('INVENTORY: ');
 
@@ -100,7 +133,7 @@ Game.prototype.drawInventory = function () {
 		});
 	} else {
 		$('#inventory').html('');
-	}
+	} 
 };
 
 /* methods relating to specific inventory items go here */

@@ -167,8 +167,9 @@ class MyMap {
             this.boxes[key].draw();
         }
 
-        if (MyGame.player) MyGame.player.draw();
-        if (MyGame.pedro) MyGame.pedro.draw();
+        for (let i=0;i<MyGame.agents.length;++i) {
+            MyGame.agents[i].draw();
+        }
 
         fov.compute(MyGame.player.x, MyGame.player.y, 25, function(x, y, r, visibility) {
             const key = x+','+y;   

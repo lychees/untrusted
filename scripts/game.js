@@ -6,6 +6,7 @@ var MyGame = {
     camera: null,    
     player: null,
     pedro: null,
+    agents: [],
     ananas: null,
     _game: null,
     logs: [],
@@ -83,12 +84,19 @@ var MyGame = {
     },      
     
     drawStatus() {
+        /*
         this.status_display.drawText(0, 0, "伊莎貝拉");
         this.status_display.drawText(0, 1, ROT.Util.format("生命 %s/%s", this.player.hp, this.player.HP));
         this.status_display.drawText(0, 2, ROT.Util.format("魔力 %s/%s", this.player.mp, this.player.MP));        
         this.status_display.drawText(0, 3, ROT.Util.format("速 %s\n", this.player.speed));
         this.status_display.drawText(0, 4, ROT.Util.format("攻 %s\n", this.player.ap));
-        this.status_display.drawText(0, 5, ROT.Util.format("防 %s\n", this.player.dp));
+        this.status_display.drawText(0, 5, ROT.Util.format("防 %s\n", this.player.dp));*/
+        let T = "伊莎貝拉";
+        T += "生命 ";
+        T += this.player.hp;
+        T += "/ ";
+        T += this.player.HP;
+        $('#inventory').text(T);
     },
 
     draw() {
