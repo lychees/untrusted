@@ -260,7 +260,22 @@ class Pedro extends Being {
     }
     act() {
         if (this.isDead()) return;
+
+        let fov = new ROT.FOV.PreciseShadowcasting(function(x, y) {
+            const key = x+','+y; 
+            return MyGame.map.light(key);
+        });
+
+        let visible = {};
+
+        fov.compute(this.x, this.y, 122, function(x, y, r, visibility) {
+            const key = x+','+y;   
+            visible[key] = true;
+        });
+
         const x = MyGame.player.x, y = MyGame.player.y;
+        let key = x+','+y;
+        if (!visible[key]) return;
              
         var passableCallback = function(x, y) {
             return (x+","+y in MyGame.map.ground);
@@ -274,7 +289,7 @@ class Pedro extends Being {
         astar.compute(this.x, this.y, pathCallback);
     
         path.shift();
-        //console.log(path); // ???
+        console.log(path); // ???
         if (!path || path.length === 0) {     
             attack(this, MyGame.player);   
             //alert("遊戲結束，你被活捉了！");
