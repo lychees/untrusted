@@ -170,6 +170,115 @@ function playIntro(display, map, i) {
     }
 }
 (function () {
+
+var MyGame = {   
+    
+    engine: null,
+    map: null,
+    camera: null,    
+    player: null,
+    pedro: null,
+    agents: [],
+    ananas: null,
+    _game: null,
+    logs: [],
+
+    getLevelByPath(filePath) {
+//        var game = this;
+
+        let editor = this._game.editor;
+        let game = this._game;
+
+        $.get(filePath, function (lvlCode) {
+            editor.loadCode(lvlCode);
+
+            game._currentLevel = 'bonus';
+            game._currentBonusLevel = filePath.split("levels/")[1];
+            game._currentFile = null;
+
+            // load level code in editor
+            editor.loadCode(lvlCode);
+
+            // start the level and fade in
+            game._evalLevelCode(null, null, true);
+            game.display.focus();
+
+            // store the commands introduced in this level (for api reference)
+            __commands = __commands.concat(editor.getProperties().commandsIntroduced).unique();
+            localStorage.setItem(this._getLocalKey('helpCommands'), __commands.join(';'));
+        }, 'text');
+    },
+
+    initCamera() {
+        const o = this.map.display.getOptions();
+        const w = o.width, h = o.height;
+        this.camera = new Camera(this.player.x, this.player.y, Math.floor(w/2), Math.floor(h/2));        
+        this.camera.adjust();    
+    },
+
+    init() {
+
+        if (this.inited) return;
+        this.SE = new Sound('local');
+        this.inited = true;
+
+        this._MyPlayer = MyPlayer;
+        this._Camera = Camera;
+        this._Pedro = Pedro;
+        this._Box = Box;
+    
+        this.map = new MyMap();
+                
+        this.status_display = new ROT.Display({
+            width: 20,
+            height: 16,
+            fontSize: 20,
+            space: 1.1,
+            fontFamily: "Helvetica",
+        });
+        
+        this.logs_display = new ROT.Display({
+            width: 64,
+            height: 4,
+            fontSize: 20,
+            space: 1.1,
+            fontFamily: "Helvetica",
+        });
+
+        //document.body.appendChild(this.map.display.getContainer());
+        //document.body.appendChild(this.logs_display.getContainer());
+        var ctx = $('#screen')[0];
+        ctx.appendChild(this.map.display.getContainer());
+        $("#screen canvas:first").css("display", "none");
+
+       // var ctx = $('#container')[0];
+       // ctx.appendChild(this.status_display.getContainer());
+    },      
+    
+    drawStatus() {
+        /*
+        this.status_display.drawText(0, 0, "伊莎貝拉");
+        this.status_display.drawText(0, 1, ROT.Util.format("生命 %s/%s", this.player.hp, this.player.HP));
+        this.status_display.drawText(0, 2, ROT.Util.format("魔力 %s/%s", this.player.mp, this.player.MP));        
+        this.status_display.drawText(0, 3, ROT.Util.format("速 %s\n", this.player.speed));
+        this.status_display.drawText(0, 4, ROT.Util.format("攻 %s\n", this.player.ap));
+        this.status_display.drawText(0, 5, ROT.Util.format("防 %s\n", this.player.dp));*/
+        let T = "伊莎貝拉";
+        T += "生命 ";
+        T += this.player.hp;
+        T += "/ ";
+        T += this.player.HP;
+        $('#inventory').text(T);
+    },
+
+    draw() {
+        this.map.draw();
+        this.drawStatus();
+    }
+}
+
+// -----
+
 function Game(debugMode, startLevel) {
     /* private properties */
 
@@ -189,7 +298,7 @@ function Game(debugMode, startLevel) {
     ];
 
     this._bonusLevels = [
-'1-prison-break.jsx','2-a-dungeon.jsx','2-a-dungeon的副本.jsx','test-maze.jsx'
+'1-the-imorisoned-bird.jsx','2-1-dungeon.jsx','2-2-dungeon.jsx','2-3-dungeon.jsx'
     ].filter(function (lvl) { return (lvl.indexOf('_') != 0); }); // filter out bonus levels that start with '_'
 
 	this._mod = '';
@@ -275,9 +384,6 @@ function Game(debugMode, startLevel) {
         this.map = new Map(this.display, this);
 
         this.myGame = MyGame;
-        console.log("!!!!!!!!!!!!!");
-        console.log(this.myGame);
-
 
         this.objects = this.getListOfObjects();
 
@@ -1588,6 +1694,33 @@ function DynamicObject(map, type, x, y, __game) {
         this._onTurn();
     }
 }
+class Inventory {
+    list = [];
+    constructor() {
+        this.list = [];
+    }
+    addItem(item) {
+        this.list.push(item);
+    }
+    drop(item) {
+        for (let i=0;i<this.list.length;++i) {
+            if (this.list[i] === item) {
+                this.list[i] = this.list[this.list.length - 1];
+                this.list.pop();
+            }
+        }
+    }
+    hasItem(item) {
+        for (let i=0;i<this.list.length;++i) {
+            let t = this.list[i];
+            if (t === item) return true;
+        }
+        return false;
+    }
+}
+
+// ————————
+
 Game.prototype.inventory = [];
 
 Game.prototype.getItemDefinition = function (itemName) {
@@ -1674,8 +1807,14 @@ Game.prototype.setInventoryStateByLevel = function (levelNum) {
 };
 
 Game.prototype.drawInventory = function () {
-	var game = this;
 
+	/*
+	var game = this;
+	let T = '伊莎貝拉 ';
+	T += 'HP';
+	$('#inventory').text(T); */
+
+	/*
 	if (this.inventory.length > 0) {
 		$('#inventory').text('INVENTORY: ');
 
@@ -1690,7 +1829,7 @@ Game.prototype.drawInventory = function () {
 		});
 	} else {
 		$('#inventory').html('');
-	}
+	} */
 };
 
 /* methods relating to specific inventory items go here */
@@ -1707,6 +1846,190 @@ Game.prototype.usePhone = function () {
 		}
 	}
 };
+class MyMap {
+
+    width = 0; height = 0; layer = {};
+    tile_info = {};
+    display = null;  
+    default_tile = '牆'; default_color = '#fff';
+
+    ground = {};
+    shadow = {};
+    boxes = {};
+    color = {};
+    objectDefinitions = {};
+
+    constructor() {
+        this.display = new ROT.Display({
+        	width: DISPLAY_WIDTH / DISPLAY_FONTSIZE,
+        	height: DISPLAY_HEIGHT / DISPLAY_FONTSIZE,
+        	fontSize: DISPLAY_FONTSIZE,
+            space: 1.1,
+            fontFamily: "Helvetica",
+        });
+
+        this.defineObject('　', {
+            'symbol': '　',
+            'pass': true,        
+            'light': true,
+        });    
+    
+        this.defineObject('牆', {
+            'symbol': '牆',
+            'pass': false,        
+            'light': false,
+            'torch': function() {
+                game.sound.playSound('blip');
+            }
+        });
+
+        this.defineObject('門', {
+            'symbol': '門',
+            'pass': true,        
+            'light': true,        
+        });
+
+        this.defineObject('關', {
+            'symbol': '關',
+            'pass': false,        
+            'light': false,
+            'torch': function() {
+                alert("无法通行");
+            }
+        });        
+    }
+
+    touch(key) {
+        let c = this.ground[key];
+        if (!c) c = this.default_tile;
+        let d = this.objectDefinitions[c];        
+        if (d && d['touch']) {
+            d['touch']();
+        }
+        if (this.layer[key]) {
+            this.layer[key].forEach(function (t) {
+                let d = MyGame.map.objectDefinitions[t];
+                if (d && d['touch']) {
+                    d['touch']();
+                }
+            });
+        }
+    }
+
+    pass(key) {
+        let c = this.ground[key];
+        if (!c) c = this.default_tile;
+        let d = this.objectDefinitions[c];        
+        if (!d || !d['pass']) return false;
+        if (this.layer[key]) {
+            for (let i=0;i<this.layer[key].length;++i) { 
+                let t = this.layer[key][i];
+                let d = MyGame.map.objectDefinitions[t];
+                if (!d || !d['pass']) return false;                
+            }
+        }
+        return true;
+    }
+
+    light(key) {
+        let c = this.ground[key];
+        if (!c) c = this.default_tile;
+        let d = this.objectDefinitions[c];        
+        if (!d || !d['light']) return false;
+        if (this.layer[key]) {
+            for (let i=0;i<this.layer[key].length;++i) { 
+                let t = this.layer[key][i];
+                let d = MyGame.map.objectDefinitions[t];
+                if (!d || !d['light']) return false;                
+            }
+        }
+        return true;
+    }    
+
+    defineObject(name, properties) {
+       /* if (this.objectDefinitions[name]) {
+            throw "There is already a type of object named " + name + "!";
+        }*/
+        this.objectDefinitions[name] = properties;
+    }
+
+    createBeing(what, freeCells) {
+        var index = Math.floor(ROT.RNG.getUniform() * freeCells.length);
+        var key = freeCells.splice(index, 1)[0];
+        var parts = key.split(",");
+        var x = parseInt(parts[0]);
+        var y = parseInt(parts[1]);      
+        return new what(x, y, 7, 10, 5, 1, 0);
+    }
+
+    drawTileAt(x, y, key) {
+        let bg = this.shadow[key]; if (!bg) {
+            this.display.draw(x, y, null);
+            return;
+        }
+        let ch = this.ground[key];
+        if (this.layer[key]) { 
+            this.layer[key].forEach(function (t) {
+                let d = MyGame.map.objectDefinitions[t];
+                if (d && d.symbol) {
+                    ch = d.symbol;
+                }
+            });
+        }
+
+
+        if (!ch) ch = this.default_tile;
+        let de = MyGame.map.objectDefinitions[ch];
+        let fc = this.default_color;
+        if (de && de['color']) {
+            fc = de['color'];
+        }
+        if (this.shadow[key] === '#fff') this.display.draw(x, y, ch, fc);
+        else this.display.draw(x, y, ch, add_shadow(fc));  
+    }
+            
+    draw() {
+        const o = this.display.getOptions(); 
+        let w = o.width, h = o.height; 
+        
+        let fov = new ROT.FOV.PreciseShadowcasting(function(x, y) {
+            const key = x+','+y; 
+            return MyGame.map.light(key);
+        });
+
+        fov.compute(MyGame.player.x, MyGame.player.y, 18, function(x, y, r, visibility) {            
+            const key = x+','+y;   
+            MyGame.map.shadow[key] = "#fff"; // this.shadow?
+        });
+      
+        for (let x=0;x<w;++x) {
+        	for (let y=0;y<h;++y) {
+        		let xx = x + MyGame.camera.x - MyGame.camera.ox;
+                let yy = y + MyGame.camera.y - MyGame.camera.oy;
+                let key = xx+','+yy;
+                this.drawTileAt(x, y, key);
+        	}
+        }
+
+        for (var key in this.boxes) {  
+            this.boxes[key].draw();
+        }
+
+        for (let i=0;i<MyGame.agents.length;++i) {
+            MyGame.agents[i].draw();
+        }
+
+        fov.compute(MyGame.player.x, MyGame.player.y, 25, function(x, y, r, visibility) {
+            const key = x+','+y;   
+            MyGame.map.shadow[key] = '#555';
+        }); 
+
+        MyGame.drawStatus();
+    }
+}
+
+// --------
+
 function Map(display, __game) {
     /* private variables */
 
@@ -2640,11 +2963,20 @@ Game.prototype.getListOfObjects = function () {
         }
     };
 };
-MAP_WIDTH = 64;
-MAP_HEIGHT = 32;
-DISPLAY_FONTSIZE = 20;
-DISPLAY_WIDTH = 40 * DISPLAY_FONTSIZE;
-DISPLAY_HEIGHT = 25 * DISPLAY_FONTSIZE;
+const DISPLAY_FONTSIZE = 20;
+const DISPLAY_WIDTH = 40 * DISPLAY_FONTSIZE;
+const DISPLAY_HEIGHT = 25 * DISPLAY_FONTSIZE;
+
+function attack(alice, bob) {
+    alice.hp -= 1; if (alice.hp <= 0) alice.dead();
+    bob.hp -= 1; if (bob.hp <= 0) bob.dead();
+}
+
+function swap(a, b) {
+    let t = a;
+    a = b;
+    b = t;
+}
 
 // https://stackoverflow.com/questions/12143544/how-to-multiply-two-colors-in-javascript
 function add_shadow(c1, d) {
@@ -2676,10 +3008,10 @@ class Camera {
         const w = o.width, h = o.height;
     	
     	if (this.x - this.ox < 0) this.ox += this.x - this.ox;    	
-    	else if (MyGame.map.width - this.x + this.ox < w) this.ox -= (MyGame.map.width - this.x + this.ox) - w + 1;
-    	
-    	if (this.y - this.oy < 0) this.oy += this.y - this.oy;
-    	else if (MyGame.map.height - this.y + this.oy < h) this.oy -= (MyGame.map.height - this.y + this.oy) - h + 1;
+        if (MyGame.map.width - this.x + this.ox < w) this.ox -= (MyGame.map.width - this.x + this.ox) - w + 1;
+            	
+    	if (this.y - this.oy < 0) this.oy += this.y - this.oy;        
+    	if (MyGame.map.height - this.y + this.oy < h) this.oy -= (MyGame.map.height - this.y + this.oy) - h + 1;        
     }
 
     zoom(d) {
@@ -2715,199 +3047,6 @@ class Camera {
         }
     }
 }
-
-class MyMap {
-
-    display = null;    
-    width = 0; height = 0;    
-    ground = {};
-    shadow = {};
-    boxes = {};
-    color = {};
-    ananas = null;
-
-    constructor() {
-        this.display = new ROT.Display({
-        	width: DISPLAY_WIDTH / DISPLAY_FONTSIZE,
-        	height: DISPLAY_HEIGHT / DISPLAY_FONTSIZE,
-        	fontSize: DISPLAY_FONTSIZE,
-            space: 1.1,
-            fontFamily: "Helvetica",
-        });
-
-    	this.width = MAP_WIDTH;
-    	this.height = MAP_HEIGHT;
-        var digger = new ROT.Map.Digger(this.width, this.height);
-        // var digger = new ROT.Map.Arena(this.width, this.height); 
-        
-        let freeCells = [];        
-        var digCallback = function(x, y, value) {
-            if (value) { return; }            
-            var key = x+","+y;
-            this.ground[key] = " ";
-            freeCells.push(key);
-        }
-        digger.create(digCallback.bind(this));        
-        
-        this.generateBoxes(freeCells); 
-        console.log(freeCells);
-        MyGame.player = this.createBeing(MyPlayer, freeCells);               
-        MyGame.pedro = this.createBeing(Pedro, freeCells);
-    }
-    
-    createBeing(what, freeCells) {
-        var index = Math.floor(ROT.RNG.getUniform() * freeCells.length);
-        var key = freeCells.splice(index, 1)[0];
-        var parts = key.split(",");
-        var x = parseInt(parts[0]);
-        var y = parseInt(parts[1]);      
-        return new what(x, y, 7, 10, 5, 1, 0);
-    }
-    
-    generateBoxes(freeCells) {
-        for (var i=0;i<3;i++) {
-            var index = Math.floor(ROT.RNG.getUniform() * freeCells.length);
-            var key = freeCells.splice(index, 1)[0];
-            var parts = key.split(",");
-            var x = parseInt(parts[0]);
-            var y = parseInt(parts[1]); 
-            this.boxes[key] = new Box(x, y);  
-            /*this.ground[key] = "箱";
-            this.color[key] = "#cc0";
-            if (!i) { this.ananas = key; } /* first box contains an ananas
-            */
-        }
-    }
-        
-    draw() {
-
-        console.log("draw: ");
-
-        const o = this.display.getOptions(); 
-        let w = o.width, h = o.height; 
-        
-        let fov = new ROT.FOV.PreciseShadowcasting(function(x, y) {
-            const key = x+','+y; 
-            if (!MyGame.map.ground[key]) return false; // this.ground?
-            return true;
-        });
-
-        fov.compute(MyGame.player.x, MyGame.player.y, 18, function(x, y, r, visibility) {            
-            const key = x+','+y;   
-            MyGame.map.shadow[key] = "#fff"; // this.shadow?
-        });
-
-        console.log(w);
-        console.log(h);
-  	
-        for (let x=0;x<w;++x) {
-        	for (let y=0;y<h;++y) {
-        		let xx = x + MyGame.camera.x - MyGame.camera.ox;
-        		let yy = y + MyGame.camera.y - MyGame.camera.oy;
-        		let key = xx+','+yy;   
-                let bg = this.shadow[key]; if (!bg) {
-                    this.display.draw(x, y, null);
-                    continue;
-                }
-                let c = this.ground[key];
-
-                if (!c) c = "啊";
-                if (this.shadow[key] === '#fff') this.display.draw(x, y, c, '#fff');
-                else this.display.draw(x, y, c, add_shadow('#fff'));                
-        	}
-        }
-
-        for (var key in this.boxes) {  
-            this.boxes[key].draw();
-        }
-
-        if (MyGame.player) MyGame.player.draw();
-        if (MyGame.pedro) MyGame.pedro.draw();
-
-        fov.compute(MyGame.player.x, MyGame.player.y, 25, function(x, y, r, visibility) {
-            const key = x+','+y;   
-            MyGame.map.shadow[key] = '#555';
-        }); 
-
-        MyGame.drawStatus();
-    }
-}
-
-var MyGame = {    
-    engine: null,
-    map: null,
-    camera: null,    
-    player: null,
-    pedro: null,
-    ananas: null,
-    logs: [],
-    cnt: 0,
-    
-    init: function() {
-
-        this.cnt += 1;
-        if (this.cnt !== 3) return;
-    
-
-        this.map = new MyMap();
-                
-        this.status_display = new ROT.Display({
-            width: 20,
-            height: 16,
-            fontSize: 20,
-            space: 1.1,
-            fontFamily: "Helvetica",
-        });
-        
-        this.logs_display = new ROT.Display({
-            width: 64,
-            height: 4,
-            fontSize: 20,
-            space: 1.1,
-            fontFamily: "Helvetica",
-        });
-
-        //document.body.appendChild(this.map.display.getContainer());
-        //document.body.appendChild(this.logs_display.getContainer());
-        var ctx = $('#screen')[0];
-        ctx.appendChild(this.map.display.getContainer());
-        $("#screen canvas:first").css("display", "none");
-
-       // var ctx = $('#container')[0];
-       // ctx.appendChild(this.status_display.getContainer());
-        
-                    
-        var scheduler = new ROT.Scheduler.Simple();
-        scheduler.add(this.player, true);
-        scheduler.add(this.pedro, true);
-                
-        let o = this.map.display.getOptions();
-        let w = o.width;
-        let h = o.height;
-
-        this.camera = new Camera(this.player.x, this.player.y, Math.floor(w/2), Math.floor(h/2));        
-        this.camera.adjust();
-           
-        this.engine = new ROT.Engine(scheduler);        
-        this.engine.start();
-        this.draw();
-    },
-
-    drawStatus() {
-        this.status_display.drawText(0, 0, "伊莎貝拉");
-        this.status_display.drawText(0, 1, ROT.Util.format("生命 %s/%s", this.player.hp, this.player.HP));
-        this.status_display.drawText(0, 2, ROT.Util.format("魔力 %s/%s", this.player.mp, this.player.MP));        
-        this.status_display.drawText(0, 3, ROT.Util.format("速 %s\n", this.player.speed));
-        this.status_display.drawText(0, 4, ROT.Util.format("攻 %s\n", this.player.ap));
-        this.status_display.drawText(0, 5, ROT.Util.format("防 %s\n", this.player.dp));
-    },
-
-    draw() {
-        this.map.draw();
-        this.drawStatus();
-    }
-};
-
 
 class Event {
     x = 0;
@@ -2948,13 +3087,20 @@ class Being {
         this._HP = hp; this.HP = hp; this.hp = hp;
         this._MP = mp; this.MP = mp; this.mp = mp;
         this._ap = this.ap = ap;
-        this._dp = this.dp = dp;        
+        this._dp = this.dp = dp;   
+        this.inventory = new Inventory();     
     }
     dead() {
-        this.ch = '死'; this.color = '#222';
+        this.color = '#222';
     }
     draw() {
         MyGame.map.display.draw(this.x - MyGame.camera.x + MyGame.camera.ox, this.y - MyGame.camera.y + MyGame.camera.oy, this.ch, this.color);
+    }
+    hasItem(item) {
+        return this.inventory.hasItem(item);
+    }
+    addItem(item) {
+        this.inventory.addItem(item);
     }
 }
 
@@ -2986,9 +3132,17 @@ class MyPlayer extends Being {
         MyGame.engine.lock();
         window.addEventListener("keydown", this);
     }
-    handleEvent(e) {        
+    handleEvent(e) {     
+
         var code = e.keyCode;
         if (code == 13 || code == 32) {
+            var key = this.x + "," + this.y;
+            let g = MyGame.map.ground[key];
+            let d = MyGame.map.objectDefinitions[g];   
+
+            if (d['open']) {
+                d['open']();
+            }
             this.checkBox();
             return;
         }
@@ -3000,7 +3154,6 @@ class MyPlayer extends Being {
             MyGame.camera.zoom(-1);
         }
 
-
         var keyMap = {};
         keyMap[38] = 0;
         keyMap[33] = 1;
@@ -3010,7 +3163,6 @@ class MyPlayer extends Being {
         keyMap[35] = 5;
         keyMap[37] = 6;
         keyMap[36] = 7;
-
     
         /* one of numpad directions? */
         if (!(code in keyMap)) { return; }
@@ -3021,16 +3173,34 @@ class MyPlayer extends Being {
         var newY = this.y + dir[1];
 
         var newKey = newX + "," + newY;
+        
         if (!(newKey in MyGame.map.ground)) { return; }
+        let g = MyGame.map.ground[newKey];
+        let d = MyGame.map.objectDefinitions[g];        
 
-        if (MyGame.pedro.x === newX && MyGame.pedro.y === newY) {
+        MyGame.map.touch(newKey);
+
+        if (!MyGame.map.pass(newKey)) return;
+
+        for (let i=0;i<MyGame.agents.length;++i) {
+            let a = MyGame.agents[i];
+            if (newX === a.x && newY === a.y && a.hp > 0) {
+                attack(this, a);
+                MyGame.map.draw();
+                return;
+            }
+        }
+/*
+        if (MyGame.pedro && MyGame.pedro.x === newX && MyGame.pedro.y === newY) {
             
         } else {
-            this.x = newX; this.y = newY;
-            MyGame.camera.move(dir[0], dir[1]);
-            MyGame.map.draw();
-            
-        }   
+                       
+        }*/
+
+        this.x = newX; this.y = newY;
+        MyGame.camera.move(dir[0], dir[1]);
+        MyGame.map.draw(); 
+
         window.removeEventListener("keydown", this);
         MyGame.engine.unlock();
     }    
@@ -4028,99 +4198,8 @@ var DummyDisplay = function () {
 };
 
 Game.prototype.validate = function(allCode, playerCode, restartingLevelFromScript) {
-    var game = this;
-
-    try {
-        for (var i = 0; i < this.verbotenWords.length; i++) {
-            var badWord = this.verbotenWords[i];
-            if (playerCode.indexOf(badWord) > -1) {
-                throw "You are not allowed to use '" + badWord + "'!";
-            }
-        }
-
-        var dummyMap = new Map(new DummyDisplay(), this);
-        dummyMap._dummy = true;
-        dummyMap._setProperties(this.editor.getProperties().mapProperties);
-
-        // modify the code to always check time to prevent infinite loops
-        allCode = allCode.replace(/\)\s*{/g, ") {"); // converts Allman indentation -> K&R
-        allCode = allCode.replace(/\n\s*while\s*\((.*)\)/g, "\nfor (dummy=0;$1;)"); // while -> for
-        allCode = $.map(allCode.split('\n'), function (line, i) {
-            return line.replace(/for\s*\((.*);(.*);(.*)\)\s*{/g,
-                "for ($1, startTime = Date.now();$2;$3){" +
-                    "if (Date.now() - startTime > " + game.allowedTime + ") {" +
-                        "throw '[Line " + (i+1) + "] TimeOutException: Maximum loop execution time of " + game.allowedTime + " ms exceeded.';" +
-                    "}");
-        }).join('\n');
-
-        if (this._debugMode) {
-            console.log(allCode);
-        }
-
-        // evaluate the code to get startLevel() and (opt) validateLevel() methods
-
-        this._eval(allCode);
-
-        // start the level on a dummy map to validate
-        this._setPlayerCodeRunning(true);
-        startLevel(dummyMap);
-        this._setPlayerCodeRunning(false);
-
-        // re-run to check if the player messed with startLevel
-        this._startOfStartLevelReached = false;
-        this._endOfStartLevelReached = false;
-        dummyMap._reset();
-        startLevel(dummyMap);
-
-        // does startLevel() execute fully?
-        // (if we're restarting a level after editing a script, we can't test for this
-        // - nor do we care)
-        /*
-        if (!this._startOfStartLevelReached && !restartingLevelFromScript) {
-            throw 'startLevel() has been tampered with!';
-        }
-        if (!this._endOfStartLevelReached && !restartingLevelFromScript) {
-            throw 'startLevel() returned prematurely!';
-        }
-        */
-
-        // has the player tampered with any functions?
-        this.detectTampering(dummyMap, dummyMap.getPlayer());
-
-        this.validateLevel = function () { return true; };
-        // does validateLevel() succeed?
-        if (typeof(validateLevel) === "function") {
-            this.validateLevel = validateLevel;
-            validateLevel(dummyMap);
-        }
-
-        this.onExit = function () { return true; };
-        if (typeof onExit === "function") {
-            this.onExit = onExit;
-        }
-
-        this.objective = function () { return false; };
-        if (typeof objective === "function") {
-            this.objective = objective;
-        }
-
-        return startLevel;
-    } catch (e) {
-        // cleanup
-        this._setPlayerCodeRunning(false);
-
-        var exceptionText = e.toString();
-        if (e instanceof SyntaxError) {
-            var lineNum = this.findSyntaxError(allCode, e.message);
-            if (lineNum) {
-                exceptionText = "[Line " + lineNum + "] " + exceptionText;
-            }
-        }
-        this.display.appendError(exceptionText);
-
-        // throw e; // for debugging
-        return null;
-    }
+    this._eval(allCode);
+    return startLevel;
 };
 
 // makes sure nothing un-kosher happens during a callback within the game
@@ -4634,13 +4713,21 @@ Game.prototype.openHelp = function () {
     }
 };
 Game.prototype._levels = {
-    'levels/main.jsx': '#BEGIN_PROPERTIES#\n{\n    "version": "1.2",\n    "commandsIntroduced": ["ROT.Map.DividedMaze", "player.atLocation"],\n    "music": "gurh"\n}\n#END_PROPERTIES#\n/********************\n * theLongWayOut.js *\n ********************\n *\n * 伊莎貝拉的逃亡計畫很快敗露。\n */\n#BEGIN_EDITABLE#\nlet __map = null;\nlet __player = null;\n#END_EDITABLE#\n\nfunction startLevel(map) {\n#START_OF_START_LEVEL#\n    __map = map;\n    __map._game.myGame.init();\n    map.placePlayer(0,0);\n    let __player = map.getPlayer();\n    __player.getItem(\'phone\');\n    __player.getItem(\'computer\');\n    __player.getItem(\'blueKey\');       \n#END_OF_START_LEVEL#\n}\n ', 
+    'levels/main.jsx': '#BEGIN_PROPERTIES#\n{\n    "version": "1.2",\n    "commandsIntroduced": ["ROT.Map.DividedMaze", "player.atLocation"],\n    "music": "gurh"\n}\n#END_PROPERTIES#\n#BEGIN_EDITABLE#\n/********************\n * 逃亡 *\n ********************\n *\n * 伊莎貝拉的逃亡計畫很快敗露。\n */\nlet _game = null;\nlet _map = null;\nlet _player = null;\nlet _pedro = null;\nlet _agents = null;\n\nconst MAP_WIDTH = 16;\nconst MAP_HEIGHT = 16;\n\nfunction generateBoxes(freeCells) {\n    for (var i=0;i<100;i++) {\n        var index = Math.floor(ROT.RNG.getUniform() * freeCells.length);\n        var key = freeCells.splice(index, 1)[0];\n        var parts = key.split(",");\n        var x = parseInt(parts[0]);\n        var y = parseInt(parts[1]); \n        _map.boxes[key] = new _game._Box(x, y);  \n    }\n}\n\nfunction pop_random(cells) {\n    let index = Math.floor(ROT.RNG.getUniform() * cells.length);\n    let key = cells.splice(index, 1)[0];\n    return key;\n}\n\nfunction init() {\n    \n    _game.init(); \n    _map = _game.map;\n\n    _map.defineObject(\'上\', {\n        \'symbol\': \'上\',\n        \'pass\': true,\n        \'light\': true,\n        \'color\': \'#eee\',   \n        \'open\': function(handle) {\n            _game.SE.playSound(\'complete\');\n            //_game.getLevelByPath(\'levels/bonus/1-the-imorisoned-bird.jsx\');\n            _game.getLevelByPath(\'levels/bonus/2-2-dungeon.jsx\');\n            // alert("你回收了愛劍");\n        },\n    });        \n\n    _map.width = MAP_WIDTH;\n    _map.height = MAP_HEIGHT;\n    var digger = new ROT.Map.Digger(_map.width, _map.height);\n    //var digger = new ROT.Map.Arena(_map.width, _map.height); \n\n    let freeCells = [];        \n    var digCallback = function(x, y, value) {\n        if (value) { return; }            \n        var key = x+","+y;\n        _map.ground[key] = "　";\n        freeCells.push(key);\n    }\n    digger.create(digCallback.bind(this));\n    //generateBoxes(freeCells); \n    _game.player = _map.createBeing(_game._MyPlayer, freeCells);\n    _game.pedro = _map.createBeing(_game._Pedro, freeCells);\n    _player = _game.player;\n    _pedro = _game.pedro;\n    _agents = _game.agents;\n\n //   _agents.push(_pedro);\n    \n    let t = pop_random(freeCells);\n    _map.ground[t] = \'上\';\n\n    for (let i=0;i<2;++i) {\n        let t = pop_random(freeCells);\n        let parts = t.split(",");\n        let x = parseInt(parts[0]);\n        let y = parseInt(parts[1]);   \n        _agents.push(new _game._Pedro(x, y, 7, 5, 5, 1, 0));\n    }\n    _agents.push(_player);\n\n    _game.initCamera();\n    _game.draw(); \n    \n    var scheduler = new ROT.Scheduler.Simple();\n    scheduler.add(_player, true);\n    scheduler.add(_pedro, true);\n    _game.engine = new ROT.Engine(scheduler);        \n    _game.engine.start();\n}\n\n#END_EDITABLE#\nfunction startLevel(map) {\n#START_OF_START_LEVEL#\n    _game = map._game.myGame;\n    _game._game = map._game;\n    map.placePlayer(0,0);\n    let p = map.getPlayer();\n    p.getItem(\'phone\');\n    p.getItem(\'computer\');\n    p.getItem(\'blueKey\');\n    init();\n#END_OF_START_LEVEL#\n}\n ', 
 };
 $(document).ready(function() {
-    var startLevel = getParameterByName('lvl') ? parseInt(getParameterByName('lvl')) : null;
-    window.game = new Game(true, startLevel);
-    window.game._initialize();
+    new Game()._initialize();
     window.eval = {};
+});
+
+// prevent ctrl+R and F5
+$(document).bind('keydown keyup', function(e) {
+    if(e.which === 116) {
+       return false;
+    }
+    if(e.which === 82 && e.ctrlKey) {
+       return false;
+    }
 });
 
 })();

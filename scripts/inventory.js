@@ -118,7 +118,7 @@ Game.prototype.drawInventory = function () {
 	T += 'HP';
 	$('#inventory').text(T); */
 
-	
+	/*
 	if (this.inventory.length > 0) {
 		$('#inventory').text('INVENTORY: ');
 
@@ -133,7 +133,7 @@ Game.prototype.drawInventory = function () {
 		});
 	} else {
 		$('#inventory').html('');
-	} 
+	} */
 };
 
 /* methods relating to specific inventory items go here */

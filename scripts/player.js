@@ -2,11 +2,14 @@ const DISPLAY_FONTSIZE = 20;
 const DISPLAY_WIDTH = 40 * DISPLAY_FONTSIZE;
 const DISPLAY_HEIGHT = 25 * DISPLAY_FONTSIZE;
 
-function swap(a, b) {
-    let t = a;
-    a = b;
-    b = t;
+function attack(alice, bob) {    
+    let dmg = dice(6)+dice(6);
+   // alice.hp -= 1; if (alice.hp <= 0) alice.dead();
+    bob.hp -= dmg; if (bob.hp <= 0) bob.dead();
+    MyGame.logs.push(alice.name + '對' + bob.name + '造成了' + dmg + '點傷害。'); 
 }
+
+
 
 // https://stackoverflow.com/questions/12143544/how-to-multiply-two-colors-in-javascript
 function add_shadow(c1, d) {
@@ -121,7 +124,7 @@ class Being {
         this.inventory = new Inventory();     
     }
     dead() {
-        this.ch = '死'; this.color = '#222';
+        this.color = '#222';
     }
     draw() {
         MyGame.map.display.draw(this.x - MyGame.camera.x + MyGame.camera.ox, this.y - MyGame.camera.y + MyGame.camera.oy, this.ch, this.color);
@@ -138,6 +141,7 @@ class MyPlayer extends Being {
     constructor(x, y, speed, hp, mp, ap, dp) {
         super(x, y, speed, hp, mp, ap, dp);
         this.ch = "伊"; this.color = "#0be";
+        this.name = "伊莎貝拉";
     }
     checkBox() {
         var key = this.x + "," + this.y;
@@ -212,14 +216,24 @@ class MyPlayer extends Being {
 
         if (!MyGame.map.pass(newKey)) return;
 
-
+        for (let i=0;i<MyGame.agents.length;++i) {
+            let a = MyGame.agents[i];
+            if (newX === a.x && newY === a.y && a.hp > 0) {
+                attack(this, a);
+                MyGame.map.draw();
+                return;
+            }
+        }
+/*
         if (MyGame.pedro && MyGame.pedro.x === newX && MyGame.pedro.y === newY) {
             
         } else {
-            this.x = newX; this.y = newY;
-            MyGame.camera.move(dir[0], dir[1]);
-            MyGame.map.draw();            
-        }
+                       
+        }*/
+
+        this.x = newX; this.y = newY;
+        MyGame.camera.move(dir[0], dir[1]);
+        MyGame.map.draw(); 
 
         window.removeEventListener("keydown", this);
         MyGame.engine.unlock();
@@ -229,7 +243,8 @@ class MyPlayer extends Being {
 class Pedro extends Being {
     constructor(x, y, speed, hp, mp, ap, dp) {
         super(x, y, speed, hp, mp, ap, dp);
-        this.ch = "衛"; this.color = "#e00";        
+        this.ch = "衛"; this.color = "#e00";  
+        this.name = "衛兵";      
     }
     act() {
         return;

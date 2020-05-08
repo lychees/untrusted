@@ -1,3 +1,15 @@
+function dice(n) {
+    return Math.floor(ROT.RNG.getUniform() * n);
+}
+
+function swap(a, b) {
+    let t = a;
+    a = b;
+    b = t;
+}
+
+// ----
+
 function clone(obj) {
     if(obj == null || typeof(obj) != 'object')
         return obj;

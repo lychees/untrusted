@@ -50,11 +50,13 @@ function init() {
         'color': '#eee',   
         'open': function(handle) {
             _game.SE.playSound('complete');
-            _game.getLevelByPath('levels/bonus/1-the-imorisoned-bird.jsx');
+            //_game.getLevelByPath('levels/bonus/1-the-imorisoned-bird.jsx');
+            _game.getLevelByPath('levels/bonus/2-2-dungeon.jsx');
             // alert("你回收了愛劍");
         },
     });        
 
+    _map.clear();
     _map.width = MAP_WIDTH;
     _map.height = MAP_HEIGHT;
     var digger = new ROT.Map.Digger(_map.width, _map.height);
@@ -74,9 +76,8 @@ function init() {
     _player = _game.player;
     _pedro = _game.pedro;
     _agents = _game.agents;
-    _agents.push(_player);
-    _agents.push(_pedro);
 
+ //   _agents.push(_pedro);
     
     let t = pop_random(freeCells);
     _map.ground[t] = '上';
@@ -86,8 +87,9 @@ function init() {
         let parts = t.split(",");
         let x = parseInt(parts[0]);
         let y = parseInt(parts[1]);   
-        _agents.push(new _game._Pedro(x, y, 7, 10, 5, 1, 0));
+        _agents.push(new _game._Pedro(x, y, 7, 5, 5, 1, 0));
     }
+    _agents.push(_player);
 
     _game.initCamera();
     _game.draw(); 

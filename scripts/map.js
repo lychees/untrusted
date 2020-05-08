@@ -51,6 +51,18 @@ class MyMap {
         });        
     }
 
+    clear() {
+        /*if (this.ground) this.ground.clear();
+        if (this.shadow) this.shadow.clear();
+        if (this.boxes) this.boxes.clear();
+        if (this.color) this.color.clear();*/
+        this.ground = {};
+        this.shadow = {};
+        this.boxes = {};
+        this.color = {};
+        this.agents = {};
+    }
+
     touch(key) {
         let c = this.ground[key];
         if (!c) c = this.default_tile;
@@ -99,9 +111,9 @@ class MyMap {
     }    
 
     defineObject(name, properties) {
-        if (this.objectDefinitions[name]) {
+       /* if (this.objectDefinitions[name]) {
             throw "There is already a type of object named " + name + "!";
-        }
+        }*/
         this.objectDefinitions[name] = properties;
     }
 

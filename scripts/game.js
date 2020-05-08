@@ -46,7 +46,10 @@ var MyGame = {
 
     init() {
 
-        if (this.inited) return;
+        if (this.inited) {
+            this.map.clear();
+            return;
+        }
         this.SE = new Sound('local');
         this.inited = true;
 
@@ -97,6 +100,13 @@ var MyGame = {
         T += "/ ";
         T += this.player.HP;
         $('#inventory').text(T);
+        $('#logs').empty();
+        if (this.logs.length >= 1) {            
+            for (let i=this.logs.length-1;i>=Math.max(0, this.logs.length-3);--i) {
+                let T ="<p>" + this.logs[i] + "</p>"; 
+                $('#logs').append(T);   
+            }
+        }
     },
 
     draw() {
