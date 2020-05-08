@@ -2,7 +2,7 @@
 {
     "version": "1.2",
     "commandsIntroduced": ["ROT.Map.DividedMaze", "player.atLocation"],
-    "music": "gurh"
+    "music": ""
 }
 #END_PROPERTIES#
 #BEGIN_EDITABLE#
@@ -10,16 +10,16 @@
  * 逃亡 *
  ********************
  *
- * 伊莎貝拉的逃亡計畫很快敗露。
+ * 伊莎貝拉的逃亡計劃很快被衛兵發現。
+ * 你必須要趕在援軍集結之前，從密道逃往城外。
  */
 let _game = null;
 let _map = null;
 let _player = null;
-let _pedro = null;
 let _agents = null;
 
-const MAP_WIDTH = 16;
-const MAP_HEIGHT = 16;
+const MAP_WIDTH = 20;
+const MAP_HEIGHT = 20;
 
 function generateBoxes(freeCells) {
     for (var i=0;i<100;i++) {
@@ -40,9 +40,11 @@ function pop_random(cells) {
 
 function init() {
     
-    _game.init(); 
+    _game.init();
     _map = _game.map;
-
+    _player = _game.player;    
+    _agents = _game.agents;
+    
     _map.defineObject('上', {
         'symbol': '上',
         'pass': true,
@@ -52,10 +54,10 @@ function init() {
             _game.SE.playSound('complete');
             //_game.getLevelByPath('levels/bonus/1-the-imorisoned-bird.jsx');
             _game.getLevelByPath('levels/bonus/2-2-dungeon.jsx');
-            // alert("你回收了愛劍");
         },
     });        
 
+    _map.clear();
     _map.width = MAP_WIDTH;
     _map.height = MAP_HEIGHT;
     var digger = new ROT.Map.Digger(_map.width, _map.height);
@@ -70,22 +72,24 @@ function init() {
     }
     digger.create(digCallback.bind(this));
     //generateBoxes(freeCells); 
-    _game.player = _map.createBeing(_game._MyPlayer, freeCells);
-    _game.pedro = _map.createBeing(_game._Pedro, freeCells);
-    _player = _game.player;
-    _pedro = _game.pedro;
-    _agents = _game.agents;
+    if (!_player) {
+        _game.player = _map.createBeing(_game._MyPlayer, freeCells);
+        _player = _game.player;
+    } else {
+        let t = pop_random(freeCells);
+        let parts = t.split(",");        
+        _player.x = parseInt(parts[0]);
+        _player.y = parseInt(parts[1]);  
+    }
 
- //   _agents.push(_pedro);
-    
     let t = pop_random(freeCells);
     _map.ground[t] = '上';
 
-    for (let i=0;i<2;++i) {
+    for (let i=0;i<3;++i) {
         let t = pop_random(freeCells);
         let parts = t.split(",");
         let x = parseInt(parts[0]);
-        let y = parseInt(parts[1]);   
+        let y = parseInt(parts[1]);
         _agents.push(new _game._Pedro(x, y, 7, 5, 5, 1, 0));
     }
     _agents.push(_player);
@@ -93,9 +97,11 @@ function init() {
     _game.initCamera();
     _game.draw(); 
     
-    var scheduler = new ROT.Scheduler.Simple();
-    scheduler.add(_player, true);
-    scheduler.add(_pedro, true);
+    let scheduler = new ROT.Scheduler.Simple();
+    //scheduler.add(_player, true);
+    for (let i=0;i<_agents.length;++i) {
+        scheduler.add(_agents[i], true); 
+    }
     _game.engine = new ROT.Engine(scheduler);        
     _game.engine.start();
 }

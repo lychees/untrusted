@@ -15,10 +15,10 @@
 let _game = null;
 let _map = null;
 let _player = null;
-let _pedro = null;
+let _agents = null;
 
-const MAP_WIDTH = 64;
-const MAP_HEIGHT = 32;
+const MAP_WIDTH = 16;
+const MAP_HEIGHT = 16;
 
 function generateBoxes(freeCells) {
     for (var i=0;i<100;i++) {
@@ -31,11 +31,31 @@ function generateBoxes(freeCells) {
     }
 }
 
+function pop_random(cells) {
+    let index = Math.floor(ROT.RNG.getUniform() * cells.length);
+    let key = cells.splice(index, 1)[0];
+    return key;
+}
+
 function init() {
     
     _game.init(); 
     _map = _game.map;
 
+    _map.defineObject('上', {
+        'symbol': '上',
+        'pass': true,
+        'light': true,
+        'color': '#eee',   
+        'open': function(handle) {
+            _game.SE.playSound('complete');
+            //_game.getLevelByPath('levels/bonus/1-the-imorisoned-bird.jsx');
+            _game.getLevelByPath('levels/bonus/2-2-dungeon.jsx');
+            // alert("你回收了愛劍");
+        },
+    });        
+
+    _map.clear();
     _map.width = MAP_WIDTH;
     _map.height = MAP_HEIGHT;
     var digger = new ROT.Map.Digger(_map.width, _map.height);
@@ -49,18 +69,31 @@ function init() {
         freeCells.push(key);
     }
     digger.create(digCallback.bind(this));
-    generateBoxes(freeCells); 
+    //generateBoxes(freeCells); 
     _game.player = _map.createBeing(_game._MyPlayer, freeCells);
-    _game.pedro = _map.createBeing(_game._Pedro, freeCells);
     _player = _game.player;
-    _pedro = _game.pedro;
+    _agents = _game.agents;
+
+ //   _agents.push(_pedro);
+    
+    let t = pop_random(freeCells);
+    _map.ground[t] = '上';
+
+    for (let i=0;i<0;++i) {
+        let t = pop_random(freeCells);
+        let parts = t.split(",");
+        let x = parseInt(parts[0]);
+        let y = parseInt(parts[1]);   
+        _agents.push(new _game._Pedro(x, y, 7, 5, 5, 1, 0));
+    }
+    _agents.push(_player);
 
     _game.initCamera();
     _game.draw(); 
     
     var scheduler = new ROT.Scheduler.Simple();
     scheduler.add(_player, true);
-    scheduler.add(_pedro, true);
+//    scheduler.add(_pedro, true);
     _game.engine = new ROT.Engine(scheduler);        
     _game.engine.start();
 }
@@ -69,6 +102,7 @@ function init() {
 function startLevel(map) {
 #START_OF_START_LEVEL#
     _game = map._game.myGame;
+    _game._game = map._game;
     map.placePlayer(0,0);
     let p = map.getPlayer();
     p.getItem('phone');

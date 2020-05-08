@@ -1,3 +1,15 @@
+function dice(n) {
+    return Math.floor(ROT.RNG.getUniform() * n);
+}
+
+function swap(a, b) {
+    let t = a;
+    a = b;
+    b = t;
+}
+
+// ----
+
 function clone(obj) {
     if(obj == null || typeof(obj) != 'object')
         return obj;
@@ -177,7 +189,7 @@ var MyGame = {
     map: null,
     camera: null,    
     player: null,
-    pedro: null,
+//    pedro: null,
     agents: [],
     ananas: null,
     _game: null,
@@ -218,7 +230,11 @@ var MyGame = {
 
     init() {
 
-        if (this.inited) return;
+        if (this.inited) {
+            this.map.clear();
+            this.agents = [];
+            return false;
+        }
         this.SE = new Sound('local');
         this.inited = true;
 
@@ -253,6 +269,7 @@ var MyGame = {
 
        // var ctx = $('#container')[0];
        // ctx.appendChild(this.status_display.getContainer());
+       return true;
     },      
     
     drawStatus() {
@@ -269,6 +286,13 @@ var MyGame = {
         T += "/ ";
         T += this.player.HP;
         $('#inventory').text(T);
+        $('#logs').empty();
+        if (this.logs.length >= 1) {            
+            for (let i=this.logs.length-1;i>=Math.max(0, this.logs.length-3);--i) {
+                let T ="<p>" + this.logs[i] + "</p>"; 
+                $('#logs').append(T);   
+            }
+        }
     },
 
     draw() {
@@ -1899,6 +1923,18 @@ class MyMap {
         });        
     }
 
+    clear() {
+        /*if (this.ground) this.ground.clear();
+        if (this.shadow) this.shadow.clear();
+        if (this.boxes) this.boxes.clear();
+        if (this.color) this.color.clear();*/
+        this.ground = {};
+        this.shadow = {};
+        this.boxes = {};
+        this.color = {};
+        this.agents = {};
+    }
+
     touch(key) {
         let c = this.ground[key];
         if (!c) c = this.default_tile;
@@ -2967,15 +3003,22 @@ const DISPLAY_FONTSIZE = 20;
 const DISPLAY_WIDTH = 40 * DISPLAY_FONTSIZE;
 const DISPLAY_HEIGHT = 25 * DISPLAY_FONTSIZE;
 
-function attack(alice, bob) {
-    alice.hp -= 1; if (alice.hp <= 0) alice.dead();
-    bob.hp -= 1; if (bob.hp <= 0) bob.dead();
-}
+function attack(alice, bob) {    
 
-function swap(a, b) {
-    let t = a;
-    a = b;
-    b = t;
+    let miss = dice(6)+dice(6);
+    if (miss < 6) {
+        MyGame.logs.push(bob.name + '躲開了' + alice.name + '的攻擊');
+        return; 
+    }
+
+    let dmg = dice(6)+dice(6);
+   // alice.hp -= 1; if (alice.hp <= 0) alice.dead();
+    bob.hp -= dmg; 
+    MyGame.logs.push(alice.name + '對' + bob.name + '造成了' + dmg + '點傷害。'); 
+    if (bob.hp <= 0) {
+        bob.dead();
+        MyGame.logs.push(bob.name + '陷入了昏迷。'); 
+    }
 }
 
 // https://stackoverflow.com/questions/12143544/how-to-multiply-two-colors-in-javascript
@@ -3090,6 +3133,9 @@ class Being {
         this._dp = this.dp = dp;   
         this.inventory = new Inventory();     
     }
+    isDead() {
+        return this.hp <= 0;
+    }
     dead() {
         this.color = '#222';
     }
@@ -3108,6 +3154,7 @@ class MyPlayer extends Being {
     constructor(x, y, speed, hp, mp, ap, dp) {
         super(x, y, speed, hp, mp, ap, dp);
         this.ch = "伊"; this.color = "#0be";
+        this.name = "伊莎貝拉";
     }
     checkBox() {
         var key = this.x + "," + this.y;
@@ -3209,10 +3256,11 @@ class MyPlayer extends Being {
 class Pedro extends Being {
     constructor(x, y, speed, hp, mp, ap, dp) {
         super(x, y, speed, hp, mp, ap, dp);
-        this.ch = "衛"; this.color = "#e00";        
+        this.ch = "衛"; this.color = "#e00";  
+        this.name = "衛兵";      
     }
     act() {
-        return;
+        if (this.isDead()) return;
         const x = MyGame.player.x, y = MyGame.player.y;
              
         var passableCallback = function(x, y) {
@@ -3228,12 +3276,14 @@ class Pedro extends Being {
     
         path.shift();
         //console.log(path); // ???
-        if (!path || path.length === 0) {        
+        if (!path || path.length === 0) {     
+            attack(this, MyGame.player);   
             //alert("遊戲結束，你被活捉了！");
             //MyGame.engine.lock();        
-        } else if (path.length === 1) {
-            alert("啊！");
-            MyGame.player.hp -= 1;
+        } else if (path.length === 1) {            
+            attack(this, MyGame.player); 
+//            attack();
+  //          MyGame.player.hp -= 1;
         } else {                    
             this.x = path[0][0]; this.y = path[0][1];            
         }
@@ -4713,7 +4763,7 @@ Game.prototype.openHelp = function () {
     }
 };
 Game.prototype._levels = {
-    'levels/main.jsx': '#BEGIN_PROPERTIES#\n{\n    "version": "1.2",\n    "commandsIntroduced": ["ROT.Map.DividedMaze", "player.atLocation"],\n    "music": "gurh"\n}\n#END_PROPERTIES#\n#BEGIN_EDITABLE#\n/********************\n * 逃亡 *\n ********************\n *\n * 伊莎貝拉的逃亡計畫很快敗露。\n */\nlet _game = null;\nlet _map = null;\nlet _player = null;\nlet _pedro = null;\nlet _agents = null;\n\nconst MAP_WIDTH = 16;\nconst MAP_HEIGHT = 16;\n\nfunction generateBoxes(freeCells) {\n    for (var i=0;i<100;i++) {\n        var index = Math.floor(ROT.RNG.getUniform() * freeCells.length);\n        var key = freeCells.splice(index, 1)[0];\n        var parts = key.split(",");\n        var x = parseInt(parts[0]);\n        var y = parseInt(parts[1]); \n        _map.boxes[key] = new _game._Box(x, y);  \n    }\n}\n\nfunction pop_random(cells) {\n    let index = Math.floor(ROT.RNG.getUniform() * cells.length);\n    let key = cells.splice(index, 1)[0];\n    return key;\n}\n\nfunction init() {\n    \n    _game.init(); \n    _map = _game.map;\n\n    _map.defineObject(\'上\', {\n        \'symbol\': \'上\',\n        \'pass\': true,\n        \'light\': true,\n        \'color\': \'#eee\',   \n        \'open\': function(handle) {\n            _game.SE.playSound(\'complete\');\n            //_game.getLevelByPath(\'levels/bonus/1-the-imorisoned-bird.jsx\');\n            _game.getLevelByPath(\'levels/bonus/2-2-dungeon.jsx\');\n            // alert("你回收了愛劍");\n        },\n    });        \n\n    _map.width = MAP_WIDTH;\n    _map.height = MAP_HEIGHT;\n    var digger = new ROT.Map.Digger(_map.width, _map.height);\n    //var digger = new ROT.Map.Arena(_map.width, _map.height); \n\n    let freeCells = [];        \n    var digCallback = function(x, y, value) {\n        if (value) { return; }            \n        var key = x+","+y;\n        _map.ground[key] = "　";\n        freeCells.push(key);\n    }\n    digger.create(digCallback.bind(this));\n    //generateBoxes(freeCells); \n    _game.player = _map.createBeing(_game._MyPlayer, freeCells);\n    _game.pedro = _map.createBeing(_game._Pedro, freeCells);\n    _player = _game.player;\n    _pedro = _game.pedro;\n    _agents = _game.agents;\n\n //   _agents.push(_pedro);\n    \n    let t = pop_random(freeCells);\n    _map.ground[t] = \'上\';\n\n    for (let i=0;i<2;++i) {\n        let t = pop_random(freeCells);\n        let parts = t.split(",");\n        let x = parseInt(parts[0]);\n        let y = parseInt(parts[1]);   \n        _agents.push(new _game._Pedro(x, y, 7, 5, 5, 1, 0));\n    }\n    _agents.push(_player);\n\n    _game.initCamera();\n    _game.draw(); \n    \n    var scheduler = new ROT.Scheduler.Simple();\n    scheduler.add(_player, true);\n    scheduler.add(_pedro, true);\n    _game.engine = new ROT.Engine(scheduler);        \n    _game.engine.start();\n}\n\n#END_EDITABLE#\nfunction startLevel(map) {\n#START_OF_START_LEVEL#\n    _game = map._game.myGame;\n    _game._game = map._game;\n    map.placePlayer(0,0);\n    let p = map.getPlayer();\n    p.getItem(\'phone\');\n    p.getItem(\'computer\');\n    p.getItem(\'blueKey\');\n    init();\n#END_OF_START_LEVEL#\n}\n ', 
+    'levels/main.jsx': '#BEGIN_PROPERTIES#\n{\n    "version": "1.2",\n    "commandsIntroduced": ["ROT.Map.DividedMaze", "player.atLocation"],\n    "music": ""\n}\n#END_PROPERTIES#\n#BEGIN_EDITABLE#\n/********************\n * 逃亡 *\n ********************\n *\n * 伊莎貝拉的逃亡計劃很快被衛兵發現。\n * 你必須要趕在援軍集結之前，從密道逃往城外。\n */\nlet _game = null;\nlet _map = null;\nlet _player = null;\nlet _agents = null;\n\nconst MAP_WIDTH = 16;\nconst MAP_HEIGHT = 16;\n\nfunction generateBoxes(freeCells) {\n    for (var i=0;i<100;i++) {\n        var index = Math.floor(ROT.RNG.getUniform() * freeCells.length);\n        var key = freeCells.splice(index, 1)[0];\n        var parts = key.split(",");\n        var x = parseInt(parts[0]);\n        var y = parseInt(parts[1]); \n        _map.boxes[key] = new _game._Box(x, y);  \n    }\n}\n\nfunction pop_random(cells) {\n    let index = Math.floor(ROT.RNG.getUniform() * cells.length);\n    let key = cells.splice(index, 1)[0];\n    return key;\n}\n\nfunction init() {\n    \n    _game.init();\n    _map = _game.map;\n    _player = _game.player;    \n    _agents = _game.agents;\n    \n    _map.defineObject(\'上\', {\n        \'symbol\': \'上\',\n        \'pass\': true,\n        \'light\': true,\n        \'color\': \'#eee\',   \n        \'open\': function(handle) {\n            _game.SE.playSound(\'complete\');\n            //_game.getLevelByPath(\'levels/bonus/1-the-imorisoned-bird.jsx\');\n            _game.getLevelByPath(\'levels/bonus/2-1-dungeon.jsx\');\n        },\n    });        \n\n    _map.clear();\n    _map.width = MAP_WIDTH;\n    _map.height = MAP_HEIGHT;\n    var digger = new ROT.Map.Digger(_map.width, _map.height);\n    //var digger = new ROT.Map.Arena(_map.width, _map.height); \n\n    let freeCells = [];        \n    var digCallback = function(x, y, value) {\n        if (value) { return; }            \n        var key = x+","+y;\n        _map.ground[key] = "　";\n        freeCells.push(key);\n    }\n    digger.create(digCallback.bind(this));\n    //generateBoxes(freeCells); \n    if (!_player) {\n        _game.player = _map.createBeing(_game._MyPlayer, freeCells);\n        _player = _game.player;\n    } else {\n        let t = pop_random(freeCells);\n        let parts = t.split(",");        \n        _player.x = parseInt(parts[0]);\n        _player.y = parseInt(parts[1]);  \n    }\n\n    let t = pop_random(freeCells);\n    _map.ground[t] = \'上\';\n\n    for (let i=0;i<2;++i) {\n        let t = pop_random(freeCells);\n        let parts = t.split(",");\n        let x = parseInt(parts[0]);\n        let y = parseInt(parts[1]);\n        _agents.push(new _game._Pedro(x, y, 7, 5, 5, 1, 0));\n    }\n    _agents.push(_player);\n\n    _game.initCamera();\n    _game.draw(); \n    \n    let scheduler = new ROT.Scheduler.Simple();\n    //scheduler.add(_player, true);\n    for (let i=0;i<_agents.length;++i) {\n        scheduler.add(_agents[i], true); \n    }\n    _game.engine = new ROT.Engine(scheduler);        \n    _game.engine.start();\n}\n\n#END_EDITABLE#\nfunction startLevel(map) {\n#START_OF_START_LEVEL#\n    _game = map._game.myGame;\n    _game._game = map._game;\n    map.placePlayer(0,0);\n    let p = map.getPlayer();\n    p.getItem(\'phone\');\n    p.getItem(\'computer\');\n    p.getItem(\'blueKey\');\n    init();\n#END_OF_START_LEVEL#\n}\n ', 
 };
 $(document).ready(function() {
     new Game()._initialize();

@@ -5,7 +5,7 @@ var MyGame = {
     map: null,
     camera: null,    
     player: null,
-    pedro: null,
+//    pedro: null,
     agents: [],
     ananas: null,
     _game: null,
@@ -48,7 +48,8 @@ var MyGame = {
 
         if (this.inited) {
             this.map.clear();
-            return;
+            this.agents = [];
+            return false;
         }
         this.SE = new Sound('local');
         this.inited = true;
@@ -84,6 +85,7 @@ var MyGame = {
 
        // var ctx = $('#container')[0];
        // ctx.appendChild(this.status_display.getContainer());
+       return true;
     },      
     
     drawStatus() {

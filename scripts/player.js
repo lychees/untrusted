@@ -3,13 +3,22 @@ const DISPLAY_WIDTH = 40 * DISPLAY_FONTSIZE;
 const DISPLAY_HEIGHT = 25 * DISPLAY_FONTSIZE;
 
 function attack(alice, bob) {    
+
+    let miss = dice(6)+dice(6);
+    if (miss < 6) {
+        MyGame.logs.push(bob.name + '躲開了' + alice.name + '的攻擊');
+        return; 
+    }
+
     let dmg = dice(6)+dice(6);
    // alice.hp -= 1; if (alice.hp <= 0) alice.dead();
-    bob.hp -= dmg; if (bob.hp <= 0) bob.dead();
+    bob.hp -= dmg; 
     MyGame.logs.push(alice.name + '對' + bob.name + '造成了' + dmg + '點傷害。'); 
+    if (bob.hp <= 0) {
+        bob.dead();
+        MyGame.logs.push(bob.name + '陷入了昏迷。'); 
+    }
 }
-
-
 
 // https://stackoverflow.com/questions/12143544/how-to-multiply-two-colors-in-javascript
 function add_shadow(c1, d) {
@@ -122,6 +131,9 @@ class Being {
         this._ap = this.ap = ap;
         this._dp = this.dp = dp;   
         this.inventory = new Inventory();     
+    }
+    isDead() {
+        return this.hp <= 0;
     }
     dead() {
         this.color = '#222';
@@ -247,7 +259,7 @@ class Pedro extends Being {
         this.name = "衛兵";      
     }
     act() {
-        return;
+        if (this.isDead()) return;
         const x = MyGame.player.x, y = MyGame.player.y;
              
         var passableCallback = function(x, y) {
@@ -263,12 +275,14 @@ class Pedro extends Being {
     
         path.shift();
         //console.log(path); // ???
-        if (!path || path.length === 0) {        
+        if (!path || path.length === 0) {     
+            attack(this, MyGame.player);   
             //alert("遊戲結束，你被活捉了！");
             //MyGame.engine.lock();        
-        } else if (path.length === 1) {
-            alert("啊！");
-            MyGame.player.hp -= 1;
+        } else if (path.length === 1) {            
+            attack(this, MyGame.player); 
+//            attack();
+  //          MyGame.player.hp -= 1;
         } else {                    
             this.x = path[0][0]; this.y = path[0][1];            
         }
