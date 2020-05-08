@@ -3229,25 +3229,22 @@ class MyPlayer extends Being {
 
         if (!MyGame.map.pass(newKey)) return;
 
+        let block = false;
         for (let i=0;i<MyGame.agents.length;++i) {
             let a = MyGame.agents[i];
             if (newX === a.x && newY === a.y && a.hp > 0) {
                 attack(this, a);
-                MyGame.map.draw();
-                return;
+                block = true;
+                break;
             }
+        } 
+        
+        if (!block){
+            this.x = newX; this.y = newY;
+            MyGame.camera.move(dir[0], dir[1]);    
         }
-/*
-        if (MyGame.pedro && MyGame.pedro.x === newX && MyGame.pedro.y === newY) {
-            
-        } else {
-                       
-        }*/
 
-        this.x = newX; this.y = newY;
-        MyGame.camera.move(dir[0], dir[1]);
         MyGame.map.draw(); 
-
         window.removeEventListener("keydown", this);
         MyGame.engine.unlock();
     }    
@@ -3259,12 +3256,47 @@ class Pedro extends Being {
         this.ch = "衛"; this.color = "#e00";  
         this.name = "衛兵";      
     }
+    move(x, y) {
+        let block = false;
+
+        if (x === MyGame.player.x && y === MyGame.player.y) {
+            attack(this, MyGame.player);
+            block = true;
+        }
+        if (!block) {
+            for (let i=0;i<MyGame.agents.length;++i) {
+                let a = MyGame.agents[i];
+                if (x === a.x && y === a.y && a.hp > 0) {
+                    block = true;
+                    break;
+                }
+            }    
+        }     
+        if (!block){
+            this.x = x; this.y = y;
+        }
+        MyGame.draw();
+    }
     act() {
         if (this.isDead()) return;
+
+        let fov = new ROT.FOV.PreciseShadowcasting(function(x, y) {
+            return MyGame.map.light(x+','+y);
+        });
+
+        let visible = {};
+
+        fov.compute(this.x, this.y, 122, function(x, y, r, visibility) {
+            const key = x+','+y;   
+            visible[key] = true;
+        });
+
         const x = MyGame.player.x, y = MyGame.player.y;
+        let key = x+','+y;
+        if (!visible[key]) return;
              
         var passableCallback = function(x, y) {
-            return (x+","+y in MyGame.map.ground);
+            return MyGame.map.pass(x+","+y);
         }
         var astar = new ROT.Path.AStar(x, y, passableCallback, {topology:4});
     
@@ -3272,22 +3304,17 @@ class Pedro extends Being {
         var pathCallback = function(x, y) {
             path.push([x, y]);
         }
-        astar.compute(this.x, this.y, pathCallback);
-    
+        astar.compute(this.x, this.y, pathCallback);    
+
         path.shift();
-        //console.log(path); // ???
+        console.log(path); // ???
         if (!path || path.length === 0) {     
-            attack(this, MyGame.player);   
+            //attack(this, MyGame.player);   
             //alert("遊戲結束，你被活捉了！");
             //MyGame.engine.lock();        
-        } else if (path.length === 1) {            
-            attack(this, MyGame.player); 
-//            attack();
-  //          MyGame.player.hp -= 1;
-        } else {                    
-            this.x = path[0][0]; this.y = path[0][1];            
+        } else {
+            this.move(path[0][0], path[0][1]);  
         }
-        MyGame.draw();
     }
 
     draw() {
