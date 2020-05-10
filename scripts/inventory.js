@@ -28,10 +28,13 @@ class Item {
 }
 
 class Apple {
+	constructor() {
+		this.name = "蘋果";
+		this.value = 2;		
+	}
 	eat(who) {
 		//MyGame.SE.playSE("Wolf RPG Maker/[Effect]Healing3_default.ogg");		
-		who.heal(3);
-//		this = null;		
+		who.heal(3);	
 	}
 }
 

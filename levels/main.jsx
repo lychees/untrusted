@@ -36,6 +36,17 @@ function generateApples(cells, num) {
     }
 }
 
+class Apple {
+	constructor() {
+		this.name = "蘋果";
+		this.value = 2;		
+	}
+	eat(who) {
+		//MyGame.SE.playSE("Wolf RPG Maker/[Effect]Healing3_default.ogg");		
+		who.heal(3);	
+	}
+}
+
 function init() {
     
     _game.init();
@@ -63,18 +74,20 @@ function init() {
         'color': '#a11',  
         'touch': function(handle) {
             //alert('touch');
-            _player.addItem('蘋果');
+            //_player.addItem('蘋果');
         },
         'open': function(a, b) {
+            _game.SE.playSE('Wolf RPG Maker/[System]Get2_wolf.ogg');            
             //alert("open");
             //_game.SE.playSound('complete');
             //_game.SE.playSE("Wolf RPG Maker/[Action]Steps1_Isooki.ogg");
             //_game.getLevelByPath('levels/bonus/1-the-imorisoned-bird.jsx');
             //_game.getLevelByPath('levels/bonus/2-1-dungeon.jsx');
-            _player.addItem('蘋果');
-         //   console.log(self);
+            _player.addItem(new Apple());
+         // console.log(self);
            // self = null;
-           a[b] = null;
+           a.splice(b, 1);
+           //a[b] = null;
         },
     });       
 

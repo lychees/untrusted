@@ -154,6 +154,7 @@ class Being {
         return this.inventory.hasItem(item);
     }
     addItem(item) {
+        MyGame.logs.push(this.name + '得到了' + item.name);
         this.inventory.addItem(item);
     }
 }
