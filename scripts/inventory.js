@@ -23,6 +23,18 @@ class Inventory {
     }
 }
 
+class Item {
+
+}
+
+class Apple {
+	eat(who) {
+		//MyGame.SE.playSE("Wolf RPG Maker/[Effect]Healing3_default.ogg");		
+		who.heal(3);
+//		this = null;		
+	}
+}
+
 // ————————
 
 Game.prototype.inventory = [];
@@ -139,6 +151,9 @@ Game.prototype.drawInventory = function () {
 /* methods relating to specific inventory items go here */
 
 Game.prototype.usePhone = function () {
+
+	alert("go");
+
 	var player = this.map.getPlayer();
 	if (player && player._canMove && player.hasItem('phone')) {
 		if (player._phoneFunc) {

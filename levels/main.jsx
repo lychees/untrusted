@@ -21,21 +21,19 @@ let _agents = null;
 const MAP_WIDTH = 16;
 const MAP_HEIGHT = 16;
 
-function generateBoxes(freeCells) {
-    for (var i=0;i<100;i++) {
-        var index = Math.floor(ROT.RNG.getUniform() * freeCells.length);
-        var key = freeCells.splice(index, 1)[0];
-        var parts = key.split(",");
-        var x = parseInt(parts[0]);
-        var y = parseInt(parts[1]); 
-        _map.boxes[key] = new _game._Box(x, y);  
-    }
-}
-
 function pop_random(cells) {
     let index = Math.floor(ROT.RNG.getUniform() * cells.length);
     let key = cells.splice(index, 1)[0];
     return key;
+}
+
+function generateApples(cells, num) {
+    for (let i=0;i<num;i++) {
+        let key = pop_random(cells);
+        var parts = key.split(",");
+        if (!_map.layer[key]) _map.layer[key] = [];
+        _map.layer[key].push("蘋果");
+    }
 }
 
 function init() {
@@ -58,6 +56,28 @@ function init() {
         },
     });        
 
+    _map.defineObject('蘋果', {
+        'symbol': '蘋',
+        'pass': true,
+        'light': true,
+        'color': '#a11',  
+        'touch': function(handle) {
+            //alert('touch');
+            _player.addItem('蘋果');
+        },
+        'open': function(a, b) {
+            //alert("open");
+            //_game.SE.playSound('complete');
+            //_game.SE.playSE("Wolf RPG Maker/[Action]Steps1_Isooki.ogg");
+            //_game.getLevelByPath('levels/bonus/1-the-imorisoned-bird.jsx');
+            //_game.getLevelByPath('levels/bonus/2-1-dungeon.jsx');
+            _player.addItem('蘋果');
+         //   console.log(self);
+           // self = null;
+           a[b] = null;
+        },
+    });       
+
     _map.clear();
     _map.width = MAP_WIDTH;
     _map.height = MAP_HEIGHT;
@@ -72,7 +92,8 @@ function init() {
         freeCells.push(key);
     }
     digger.create(digCallback.bind(this));
-    //generateBoxes(freeCells); 
+    generateApples(freeCells,  5); 
+
     if (!_player) {
         _game.player = _map.createBeing(_game._MyPlayer, freeCells);
         _player = _game.player;

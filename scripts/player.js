@@ -143,6 +143,10 @@ class Being {
         MyGame.logs.push(this.name + '陷入了昏迷。'); 
         this.color = '#222';
     }
+    heal(d) {        
+        this.hp += d;
+        if (this.hp > this.HP) this.hp = this.HP;
+    }
     draw() {
         MyGame.map.display.draw(this.x - MyGame.camera.x + MyGame.camera.ox, this.y - MyGame.camera.y + MyGame.camera.oy, this.ch, this.color);
     }
@@ -165,25 +169,6 @@ class MyPlayer extends Being {
         MyGame.SE.playSE('狂父/[びたちー]少女（悲鳴）.ogg');        
         super.dead();
     }
-    checkBox() {
-        var key = this.x + "," + this.y;
-        let b = MyGame.map.boxes[key]
-        if (!b) {
-            // alert("這裡沒有箱子。");
-        } else {
-            b.open();
-        }                        
-            /*else if (key == MyGame.ananas) {
-                alert("你得到了寶石，贏得了遊戲！");
-                MyGame.engine.lock();
-                window.removeEventListener("keydown", this);
-            } else {
-                if (MyGame.color[key] === "#cc0") {
-                    alert("箱子空空如也。");
-                    MyGame.color[key] = '#333';
-                }
-            }*/
-    }
     act() {
         MyGame.engine.lock();
         window.addEventListener("keydown", this);
@@ -193,13 +178,22 @@ class MyPlayer extends Being {
         var code = e.keyCode;
         if (code == 13 || code == 32) {
             var key = this.x + "," + this.y;
+
+            let e = MyGame.map.layer[key];
+            if (e) {
+                for (let i=0;i<e.length;++i) {
+                    let d = MyGame.map.objectDefinitions[e[i]];
+                    if (d['open']) {
+                        d['open'](e,i);
+                    }  
+                }
+            }
+            
             let g = MyGame.map.ground[key];
             let d = MyGame.map.objectDefinitions[g];   
-
             if (d['open']) {
                 d['open']();
             }
-            this.checkBox();
             return;
         }
         if (code == 79) {

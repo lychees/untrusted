@@ -7,7 +7,7 @@ class MyMap {
 
     ground = {};
     shadow = {};
-    boxes = {};
+    layer = {};
     color = {};
     objectDefinitions = {};
 
@@ -58,7 +58,7 @@ class MyMap {
         if (this.color) this.color.clear();*/
         this.ground = {};
         this.shadow = {};
-        this.boxes = {};
+        this.layer = {};
         this.color = {};
         this.agents = {};
     }
@@ -111,9 +111,9 @@ class MyMap {
     }    
 
     defineObject(name, properties) {
-       /* if (this.objectDefinitions[name]) {
-            throw "There is already a type of object named " + name + "!";
-        }*/
+        if (this.objectDefinitions[name]) {
+            console.log("There is already a type of object named " + name + "!");
+        }
         this.objectDefinitions[name] = properties;
     }
 
