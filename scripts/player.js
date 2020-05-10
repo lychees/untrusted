@@ -4,19 +4,23 @@ const DISPLAY_HEIGHT = 25 * DISPLAY_FONTSIZE;
 
 function attack(alice, bob) {    
 
+    if (bob.hp <= 0) return;
+
     let miss = dice(6)+dice(6);
     if (miss < 6) {
+        MyGame.SE.playSE("Wolf RPG Maker/[Action]Swing1_Komori.ogg");        
         MyGame.logs.push(bob.name + '躲開了' + alice.name + '的攻擊');
         return; 
     }
 
     let dmg = dice(6)+dice(6);
    // alice.hp -= 1; if (alice.hp <= 0) alice.dead();
+    MyGame.SE.playSE("Wolf RPG Maker/[Effect]Attack5_panop.ogg");
+   
     bob.hp -= dmg; 
     MyGame.logs.push(alice.name + '對' + bob.name + '造成了' + dmg + '點傷害。'); 
     if (bob.hp <= 0) {
         bob.dead();
-        MyGame.logs.push(bob.name + '陷入了昏迷。'); 
     }
 }
 
@@ -136,6 +140,7 @@ class Being {
         return this.hp <= 0;
     }
     dead() {
+        MyGame.logs.push(this.name + '陷入了昏迷。'); 
         this.color = '#222';
     }
     draw() {
@@ -154,6 +159,11 @@ class MyPlayer extends Being {
         super(x, y, speed, hp, mp, ap, dp);
         this.ch = "伊"; this.color = "#0be";
         this.name = "伊莎貝拉";
+    }
+    dead() {
+        MyGame.logs.push('你挂了，死亡夺取了你 3000 点经验。'); 
+        MyGame.SE.playSE('狂父/[びたちー]少女（悲鳴）.ogg');        
+        super.dead();
     }
     checkBox() {
         var key = this.x + "," + this.y;

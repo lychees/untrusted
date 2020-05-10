@@ -51,7 +51,8 @@ function init() {
         'light': true,
         'color': '#eee',   
         'open': function(handle) {
-            _game.SE.playSound('complete');
+            //_game.SE.playSound('complete');
+            _game.SE.playSE("Wolf RPG Maker/[Action]Steps1_Isooki.ogg");
             //_game.getLevelByPath('levels/bonus/1-the-imorisoned-bird.jsx');
             _game.getLevelByPath('levels/bonus/2-1-dungeon.jsx');
         },
